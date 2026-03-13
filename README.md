@@ -1,0 +1,1 @@
+Tabler static build
