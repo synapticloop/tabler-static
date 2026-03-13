@@ -44,3 +44,6 @@ Both this distribution and the underlying Tabler framework are licensed under th
 For detailed information on how to use Tabler components and layouts, please see:
 * [tabler-README.md](./tabler-README.md) — The original documentation from the source.
 * [Official Tabler Docs](https://tabler.io/docs) — Comprehensive online guide.
+
+
+*Last automated build: {{LAST_BUILD_DATE}}*
