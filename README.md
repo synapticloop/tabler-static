@@ -1,2 +1,0 @@
-# tabler-static
-# tabler-static
