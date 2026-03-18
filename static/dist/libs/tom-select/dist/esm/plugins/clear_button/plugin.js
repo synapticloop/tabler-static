@@ -1,5 +1,5 @@
 /**
-* Tom Select v2.4.3
+* Tom Select v2.5.2
 * Licensed under the Apache License, Version 2.0 (the "License");
 */
 
@@ -50,8 +50,10 @@ function plugin (userOptions) {
   const options = Object.assign({
     className: 'clear-button',
     title: 'Clear All',
+    role: 'button',
+    tabindex: 0,
     html: data => {
-      return `<div class="${data.className}" title="${data.title}">&#10799;</div>`;
+      return `<div class="${data.className}" title="${data.title}" role="${data.role}" tabindex="${data.tabindex}">&times;</div>`;
     }
   }, userOptions);
   self.on('initialize', () => {
@@ -62,6 +64,7 @@ function plugin (userOptions) {
       if (self.settings.mode === 'single' && self.settings.allowEmptyOption) {
         self.addItem('');
       }
+      self.refreshOptions(false);
       evt.preventDefault();
       evt.stopPropagation();
     });

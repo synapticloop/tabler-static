@@ -1,4 +1,4 @@
-import '../libs/Treemap-squared'
+import TreemapSquared from '../libs/Treemap-squared'
 import Graphics from '../modules/Graphics'
 import Animations from '../modules/Animations'
 import Fill from '../modules/Fill'
@@ -52,7 +52,7 @@ export default class TreemapChart {
       })
     })
 
-    const nodes = window.TreemapSquared.generate(
+    const nodes = TreemapSquared.generate(
       ser,
       w.globals.gridWidth,
       w.globals.gridHeight
@@ -65,6 +65,9 @@ export default class TreemapChart {
         rel: i + 1,
         'data:realIndex': i,
       })
+
+      // Set up event delegation once per series group instead of per-cell listeners
+      graphics.setupEventDelegation(elSeries, '.apexcharts-treemap-rect')
 
       if (w.config.chart.dropShadow.enabled) {
         const shadow = w.config.chart.dropShadow
@@ -134,8 +137,6 @@ export default class TreemapChart {
         })
 
         elRect.node.classList.add('apexcharts-treemap-rect')
-
-        this.helpers.addListeners(elRect)
 
         let fromRect = {
           x: x1 + (x2 - x1) / 2,

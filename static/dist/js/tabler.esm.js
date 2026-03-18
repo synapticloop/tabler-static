@@ -1,22 +1,3 @@
-var __defProp = Object.defineProperty;
-var __defProps = Object.defineProperties;
-var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __propIsEnum = Object.prototype.propertyIsEnumerable;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues = (a, b) => {
-  for (var prop in b || (b = {}))
-    if (__hasOwnProp.call(b, prop))
-      __defNormalProp(a, prop, b[prop]);
-  if (__getOwnPropSymbols)
-    for (var prop of __getOwnPropSymbols(b)) {
-      if (__propIsEnum.call(b, prop))
-        __defNormalProp(a, prop, b[prop]);
-    }
-  return a;
-};
-var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 const autosizeElements = document.querySelectorAll('[data-bs-toggle="autosize"]');
 if (autosizeElements.length) {
   autosizeElements.forEach(function(element) {
@@ -1477,195 +1458,6 @@ const Data = {
     }
   }
 };
-const MAX_UID = 1e6;
-const MILLISECONDS_MULTIPLIER = 1e3;
-const TRANSITION_END = "transitionend";
-const parseSelector = (selector) => {
-  if (selector && window.CSS && window.CSS.escape) {
-    selector = selector.replace(/#([^\s"#']+)/g, (match, id) => `#${CSS.escape(id)}`);
-  }
-  return selector;
-};
-const toType = (object) => {
-  if (object === null || object === void 0) {
-    return `${object}`;
-  }
-  return Object.prototype.toString.call(object).match(/\s([a-z]+)/i)[1].toLowerCase();
-};
-const getUID = (prefix2) => {
-  do {
-    prefix2 += Math.floor(Math.random() * MAX_UID);
-  } while (document.getElementById(prefix2));
-  return prefix2;
-};
-const getTransitionDurationFromElement = (element) => {
-  if (!element) {
-    return 0;
-  }
-  let {
-    transitionDuration,
-    transitionDelay
-  } = window.getComputedStyle(element);
-  const floatTransitionDuration = Number.parseFloat(transitionDuration);
-  const floatTransitionDelay = Number.parseFloat(transitionDelay);
-  if (!floatTransitionDuration && !floatTransitionDelay) {
-    return 0;
-  }
-  transitionDuration = transitionDuration.split(",")[0];
-  transitionDelay = transitionDelay.split(",")[0];
-  return (Number.parseFloat(transitionDuration) + Number.parseFloat(transitionDelay)) * MILLISECONDS_MULTIPLIER;
-};
-const triggerTransitionEnd = (element) => {
-  element.dispatchEvent(new Event(TRANSITION_END));
-};
-const isElement = (object) => {
-  if (!object || typeof object !== "object") {
-    return false;
-  }
-  if (typeof object.jquery !== "undefined") {
-    object = object[0];
-  }
-  return typeof object.nodeType !== "undefined";
-};
-const getElement = (object) => {
-  if (isElement(object)) {
-    return object.jquery ? object[0] : object;
-  }
-  if (typeof object === "string" && object.length > 0) {
-    return document.querySelector(parseSelector(object));
-  }
-  return null;
-};
-const isVisible = (element) => {
-  if (!isElement(element) || element.getClientRects().length === 0) {
-    return false;
-  }
-  const elementIsVisible = getComputedStyle(element).getPropertyValue("visibility") === "visible";
-  const closedDetails = element.closest("details:not([open])");
-  if (!closedDetails) {
-    return elementIsVisible;
-  }
-  if (closedDetails !== element) {
-    const summary = element.closest("summary");
-    if (summary && summary.parentNode !== closedDetails) {
-      return false;
-    }
-    if (summary === null) {
-      return false;
-    }
-  }
-  return elementIsVisible;
-};
-const isDisabled = (element) => {
-  if (!element || element.nodeType !== Node.ELEMENT_NODE) {
-    return true;
-  }
-  if (element.classList.contains("disabled")) {
-    return true;
-  }
-  if (typeof element.disabled !== "undefined") {
-    return element.disabled;
-  }
-  return element.hasAttribute("disabled") && element.getAttribute("disabled") !== "false";
-};
-const findShadowRoot = (element) => {
-  if (!document.documentElement.attachShadow) {
-    return null;
-  }
-  if (typeof element.getRootNode === "function") {
-    const root = element.getRootNode();
-    return root instanceof ShadowRoot ? root : null;
-  }
-  if (element instanceof ShadowRoot) {
-    return element;
-  }
-  if (!element.parentNode) {
-    return null;
-  }
-  return findShadowRoot(element.parentNode);
-};
-const noop = () => {
-};
-const reflow = (element) => {
-  element.offsetHeight;
-};
-const getjQuery = () => {
-  if (window.jQuery && !document.body.hasAttribute("data-bs-no-jquery")) {
-    return window.jQuery;
-  }
-  return null;
-};
-const DOMContentLoadedCallbacks = [];
-const onDOMContentLoaded = (callback) => {
-  if (document.readyState === "loading") {
-    if (!DOMContentLoadedCallbacks.length) {
-      document.addEventListener("DOMContentLoaded", () => {
-        for (const callback2 of DOMContentLoadedCallbacks) {
-          callback2();
-        }
-      });
-    }
-    DOMContentLoadedCallbacks.push(callback);
-  } else {
-    callback();
-  }
-};
-const isRTL = () => document.documentElement.dir === "rtl";
-const defineJQueryPlugin = (plugin) => {
-  onDOMContentLoaded(() => {
-    const $ = getjQuery();
-    if ($) {
-      const name = plugin.NAME;
-      const JQUERY_NO_CONFLICT = $.fn[name];
-      $.fn[name] = plugin.jQueryInterface;
-      $.fn[name].Constructor = plugin;
-      $.fn[name].noConflict = () => {
-        $.fn[name] = JQUERY_NO_CONFLICT;
-        return plugin.jQueryInterface;
-      };
-    }
-  });
-};
-const execute = (possibleCallback, args = [], defaultValue = possibleCallback) => {
-  return typeof possibleCallback === "function" ? possibleCallback.call(...args) : defaultValue;
-};
-const executeAfterTransition = (callback, transitionElement, waitForTransition = true) => {
-  if (!waitForTransition) {
-    execute(callback);
-    return;
-  }
-  const durationPadding = 5;
-  const emulatedDuration = getTransitionDurationFromElement(transitionElement) + durationPadding;
-  let called = false;
-  const handler = ({
-    target
-  }) => {
-    if (target !== transitionElement) {
-      return;
-    }
-    called = true;
-    transitionElement.removeEventListener(TRANSITION_END, handler);
-    execute(callback);
-  };
-  transitionElement.addEventListener(TRANSITION_END, handler);
-  setTimeout(() => {
-    if (!called) {
-      triggerTransitionEnd(transitionElement);
-    }
-  }, emulatedDuration);
-};
-const getNextActiveElement = (list, activeElement, shouldGetNext, isCycleAllowed) => {
-  const listLength = list.length;
-  let index = list.indexOf(activeElement);
-  if (index === -1) {
-    return !shouldGetNext && isCycleAllowed ? list[listLength - 1] : list[0];
-  }
-  index += shouldGetNext ? 1 : -1;
-  if (isCycleAllowed) {
-    index = (index + listLength) % listLength;
-  }
-  return list[Math.max(0, Math.min(index, listLength - 1))];
-};
 const namespaceRegex = /[^.]*(?=\..*)\.|.*/;
 const stripNameRegex = /\..*/;
 const stripUidRegex = /::\d+$/;
@@ -1675,7 +1467,54 @@ const customEvents = {
   mouseenter: "mouseover",
   mouseleave: "mouseout"
 };
-const nativeEvents = /* @__PURE__ */ new Set(["click", "dblclick", "mouseup", "mousedown", "contextmenu", "mousewheel", "DOMMouseScroll", "mouseover", "mouseout", "mousemove", "selectstart", "selectend", "keydown", "keypress", "keyup", "orientationchange", "touchstart", "touchmove", "touchend", "touchcancel", "pointerdown", "pointermove", "pointerup", "pointerleave", "pointercancel", "gesturestart", "gesturechange", "gestureend", "focus", "blur", "change", "reset", "select", "submit", "focusin", "focusout", "load", "unload", "beforeunload", "resize", "move", "DOMContentLoaded", "readystatechange", "error", "abort", "scroll"]);
+const nativeEvents = /* @__PURE__ */ new Set([
+  "click",
+  "dblclick",
+  "mouseup",
+  "mousedown",
+  "contextmenu",
+  "mousewheel",
+  "DOMMouseScroll",
+  "mouseover",
+  "mouseout",
+  "mousemove",
+  "selectstart",
+  "selectend",
+  "keydown",
+  "keypress",
+  "keyup",
+  "orientationchange",
+  "touchstart",
+  "touchmove",
+  "touchend",
+  "touchcancel",
+  "pointerdown",
+  "pointermove",
+  "pointerup",
+  "pointerleave",
+  "pointercancel",
+  "gesturestart",
+  "gesturechange",
+  "gestureend",
+  "focus",
+  "blur",
+  "change",
+  "reset",
+  "select",
+  "submit",
+  "focusin",
+  "focusout",
+  "load",
+  "unload",
+  "beforeunload",
+  "resize",
+  "move",
+  "DOMContentLoaded",
+  "readystatechange",
+  "error",
+  "abort",
+  "scroll"
+]);
 function makeEventUid(element, uid) {
   return uid && `${uid}::${uidEvent++}` || element.uidEvent || uidEvent++;
 }
@@ -1687,9 +1526,7 @@ function getElementEvents(element) {
 }
 function bootstrapHandler(element, fn2) {
   return function handler(event) {
-    hydrateObj(event, {
-      delegateTarget: element
-    });
+    hydrateObj(event, { delegateTarget: element });
     if (handler.oneOff) {
       EventHandler.off(element, event.type, fn2);
     }
@@ -1699,16 +1536,12 @@ function bootstrapHandler(element, fn2) {
 function bootstrapDelegationHandler(element, selector, fn2) {
   return function handler(event) {
     const domElements = element.querySelectorAll(selector);
-    for (let {
-      target
-    } = event; target && target !== this; target = target.parentNode) {
+    for (let { target } = event; target && target !== this; target = target.parentNode) {
       for (const domElement of domElements) {
         if (domElement !== target) {
           continue;
         }
-        hydrateObj(event, {
-          delegateTarget: target
-        });
+        hydrateObj(event, { delegateTarget: target });
         if (handler.oneOff) {
           EventHandler.off(element, event.type, selector, fn2);
         }
@@ -1735,10 +1568,11 @@ function addHandler(element, originalTypeEvent, handler, delegationFunction, one
   }
   let [isDelegated, callable, typeEvent] = normalizeParameters(originalTypeEvent, handler, delegationFunction);
   if (originalTypeEvent in customEvents) {
-    const wrapFunction = (fn3) => {
+    const wrapFunction = (fn22) => {
       return function(event) {
-        if (!event.relatedTarget || event.relatedTarget !== event.delegateTarget && !event.delegateTarget.contains(event.relatedTarget)) {
-          return fn3.call(this, event);
+        const evt = event;
+        if (!evt.relatedTarget || evt.relatedTarget !== evt.delegateTarget && !evt.delegateTarget.contains(evt.relatedTarget)) {
+          return fn22.call(this, event);
         }
       };
     };
@@ -1761,7 +1595,7 @@ function addHandler(element, originalTypeEvent, handler, delegationFunction, one
   element.addEventListener(typeEvent, fn2, isDelegated);
 }
 function removeHandler(element, events, typeEvent, handler, delegationSelector) {
-  const fn2 = findHandler(events[typeEvent], handler, delegationSelector);
+  const fn2 = findHandler(events[typeEvent], handler, delegationSelector != null ? delegationSelector : null);
   if (!fn2) {
     return;
   }
@@ -1819,33 +1653,8 @@ const EventHandler = {
     if (typeof event !== "string" || !element) {
       return null;
     }
-    const $ = getjQuery();
-    const typeEvent = getTypeEvent(event);
-    const inNamespace = event !== typeEvent;
-    let jQueryEvent = null;
-    let bubbles = true;
-    let nativeDispatch = true;
-    let defaultPrevented = false;
-    if (inNamespace && $) {
-      jQueryEvent = $.Event(event, args);
-      $(element).trigger(jQueryEvent);
-      bubbles = !jQueryEvent.isPropagationStopped();
-      nativeDispatch = !jQueryEvent.isImmediatePropagationStopped();
-      defaultPrevented = jQueryEvent.isDefaultPrevented();
-    }
-    const evt = hydrateObj(new Event(event, {
-      bubbles,
-      cancelable: true
-    }), args);
-    if (defaultPrevented) {
-      evt.preventDefault();
-    }
-    if (nativeDispatch) {
-      element.dispatchEvent(evt);
-    }
-    if (evt.defaultPrevented && jQueryEvent) {
-      jQueryEvent.preventDefault();
-    }
+    const evt = hydrateObj(new Event(event, { bubbles: true, cancelable: true }), args);
+    element.dispatchEvent(evt);
     return evt;
   }
 };
@@ -1853,7 +1662,7 @@ function hydrateObj(obj, meta = {}) {
   for (const [key, value] of Object.entries(meta)) {
     try {
       obj[key] = value;
-    } catch (_unused) {
+    } catch (e) {
       Object.defineProperty(obj, key, {
         configurable: true,
         get() {
@@ -1882,39 +1691,212 @@ function normalizeData(value) {
   }
   try {
     return JSON.parse(decodeURIComponent(value));
-  } catch (_unused) {
+  } catch (e) {
     return value;
   }
 }
 function normalizeDataKey(key) {
   return key.replace(/[A-Z]/g, (chr) => `-${chr.toLowerCase()}`);
 }
+const PREFIXES = ["tblr", "bs"];
 const Manipulator = {
   setDataAttribute(element, key, value) {
-    element.setAttribute(`data-bs-${normalizeDataKey(key)}`, value);
+    element.setAttribute(`data-tblr-${normalizeDataKey(key)}`, value);
   },
   removeDataAttribute(element, key) {
-    element.removeAttribute(`data-bs-${normalizeDataKey(key)}`);
+    for (const prefix2 of PREFIXES) {
+      element.removeAttribute(`data-${prefix2}-${normalizeDataKey(key)}`);
+    }
   },
   getDataAttributes(element) {
     if (!element) {
       return {};
     }
     const attributes = {};
-    const bsKeys = Object.keys(element.dataset).filter((key) => key.startsWith("bs") && !key.startsWith("bsConfig"));
-    for (const key of bsKeys) {
-      let pureKey = key.replace(/^bs/, "");
-      pureKey = pureKey.charAt(0).toLowerCase() + pureKey.slice(1);
-      attributes[pureKey] = normalizeData(element.dataset[key]);
+    for (const prefix2 of PREFIXES) {
+      const keys = Object.keys(element.dataset).filter((key) => key.startsWith(prefix2) && !key.startsWith(`${prefix2}Config`));
+      for (const key of keys) {
+        let pureKey = key.replace(new RegExp(`^${prefix2}`), "");
+        pureKey = pureKey.charAt(0).toLowerCase() + pureKey.slice(1);
+        if (!(pureKey in attributes)) {
+          attributes[pureKey] = normalizeData(element.dataset[key]);
+        }
+      }
     }
     return attributes;
   },
   getDataAttribute(element, key) {
-    return normalizeData(element.getAttribute(`data-bs-${normalizeDataKey(key)}`));
+    for (const prefix2 of PREFIXES) {
+      const value = element.getAttribute(`data-${prefix2}-${normalizeDataKey(key)}`);
+      if (value !== null) {
+        return normalizeData(value);
+      }
+    }
+    return null;
   }
 };
+const MAX_UID = 1e6;
+const MILLISECONDS_MULTIPLIER = 1e3;
+const TRANSITION_END = "transitionend";
+const parseSelector = (selector) => {
+  if (selector && window.CSS && window.CSS.escape) {
+    selector = selector.replace(/#([^\s"#']+)/g, (match, id) => `#${CSS.escape(id)}`);
+  }
+  return selector;
+};
+const toType = (object) => {
+  if (object === null || object === void 0) {
+    return `${object}`;
+  }
+  return Object.prototype.toString.call(object).match(/\s([a-z]+)/i)[1].toLowerCase();
+};
+const getUID = (prefix2) => {
+  do {
+    prefix2 += Math.floor(Math.random() * MAX_UID);
+  } while (document.getElementById(prefix2));
+  return prefix2;
+};
+const getTransitionDurationFromElement = (element) => {
+  if (!element) {
+    return 0;
+  }
+  let { transitionDuration, transitionDelay } = window.getComputedStyle(element);
+  const floatTransitionDuration = Number.parseFloat(transitionDuration);
+  const floatTransitionDelay = Number.parseFloat(transitionDelay);
+  if (!floatTransitionDuration && !floatTransitionDelay) {
+    return 0;
+  }
+  transitionDuration = transitionDuration.split(",")[0];
+  transitionDelay = transitionDelay.split(",")[0];
+  return (Number.parseFloat(transitionDuration) + Number.parseFloat(transitionDelay)) * MILLISECONDS_MULTIPLIER;
+};
+const triggerTransitionEnd = (element) => {
+  element.dispatchEvent(new Event(TRANSITION_END));
+};
+const isElement = (object) => {
+  if (!object || typeof object !== "object") {
+    return false;
+  }
+  return typeof object.nodeType !== "undefined";
+};
+const getElement = (object) => {
+  if (isElement(object)) {
+    return object;
+  }
+  if (typeof object === "string" && object.length > 0) {
+    return document.querySelector(parseSelector(object));
+  }
+  return null;
+};
+const isVisible = (element) => {
+  if (!isElement(element) || element.getClientRects().length === 0) {
+    return false;
+  }
+  const elementIsVisible = getComputedStyle(element).getPropertyValue("visibility") === "visible";
+  const closedDetails = element.closest("details:not([open])");
+  if (!closedDetails) {
+    return elementIsVisible;
+  }
+  if (closedDetails !== element) {
+    const summary = element.closest("summary");
+    if (summary && summary.parentNode !== closedDetails) {
+      return false;
+    }
+    if (summary === null) {
+      return false;
+    }
+  }
+  return elementIsVisible;
+};
+const isDisabled = (element) => {
+  if (!element || element.nodeType !== Node.ELEMENT_NODE) {
+    return true;
+  }
+  if (element.classList.contains("disabled")) {
+    return true;
+  }
+  if ("disabled" in element && typeof element.disabled !== "undefined") {
+    return Boolean(element.disabled);
+  }
+  return element.hasAttribute("disabled") && element.getAttribute("disabled") !== "false";
+};
+const findShadowRoot = (element) => {
+  if (!document.documentElement.attachShadow) {
+    return null;
+  }
+  if (typeof element.getRootNode === "function") {
+    const root = element.getRootNode();
+    return root instanceof ShadowRoot ? root : null;
+  }
+  if (element instanceof ShadowRoot) {
+    return element;
+  }
+  if (!element.parentNode) {
+    return null;
+  }
+  return findShadowRoot(element.parentNode);
+};
+const noop = () => {
+};
+const reflow = (element) => {
+  element.offsetHeight;
+};
+const isRTL = () => document.documentElement.dir === "rtl";
+const execute = (possibleCallback, args = [], defaultValue = possibleCallback) => {
+  return typeof possibleCallback === "function" ? possibleCallback.call(args[0], ...args.slice(1)) : defaultValue;
+};
+const executeAfterTransition = (callback, transitionElement, waitForTransition = true) => {
+  if (!waitForTransition) {
+    execute(callback);
+    return;
+  }
+  const durationPadding = 5;
+  const emulatedDuration = getTransitionDurationFromElement(transitionElement) + durationPadding;
+  let called = false;
+  const handler = ({ target }) => {
+    if (target !== transitionElement) {
+      return;
+    }
+    called = true;
+    transitionElement.removeEventListener(TRANSITION_END, handler);
+    execute(callback);
+  };
+  transitionElement.addEventListener(TRANSITION_END, handler);
+  setTimeout(() => {
+    if (!called) {
+      triggerTransitionEnd(transitionElement);
+    }
+  }, emulatedDuration);
+};
+const getNextActiveElement = (list, activeElement, shouldGetNext, isCycleAllowed) => {
+  const listLength = list.length;
+  let index = list.indexOf(activeElement);
+  if (index === -1) {
+    return !shouldGetNext && isCycleAllowed ? list[listLength - 1] : list[0];
+  }
+  index += shouldGetNext ? 1 : -1;
+  if (isCycleAllowed) {
+    index = (index + listLength) % listLength;
+  }
+  return list[Math.max(0, Math.min(index, listLength - 1))];
+};
+var __defProp$4 = Object.defineProperty;
+var __getOwnPropSymbols$4 = Object.getOwnPropertySymbols;
+var __hasOwnProp$4 = Object.prototype.hasOwnProperty;
+var __propIsEnum$4 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$4 = (obj, key, value) => key in obj ? __defProp$4(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$4 = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp$4.call(b, prop))
+      __defNormalProp$4(a, prop, b[prop]);
+  if (__getOwnPropSymbols$4)
+    for (var prop of __getOwnPropSymbols$4(b)) {
+      if (__propIsEnum$4.call(b, prop))
+        __defNormalProp$4(a, prop, b[prop]);
+    }
+  return a;
+};
 class Config {
-  // Getters
   static get Default() {
     return {};
   }
@@ -1935,14 +1917,19 @@ class Config {
   }
   _mergeConfigObj(config, element) {
     const jsonConfig = isElement(element) ? Manipulator.getDataAttribute(element, "config") : {};
-    return __spreadValues(__spreadValues(__spreadValues(__spreadValues({}, this.constructor.Default), typeof jsonConfig === "object" ? jsonConfig : {}), isElement(element) ? Manipulator.getDataAttributes(element) : {}), typeof config === "object" ? config : {});
+    const ctor = this.constructor;
+    return __spreadValues$4(__spreadValues$4(__spreadValues$4(__spreadValues$4({}, ctor.Default), typeof jsonConfig === "object" ? jsonConfig : {}), isElement(element) ? Manipulator.getDataAttributes(element) : {}), typeof config === "object" ? config : {});
   }
-  _typeCheckConfig(config, configTypes = this.constructor.DefaultType) {
-    for (const [property, expectedTypes] of Object.entries(configTypes)) {
+  _typeCheckConfig(config, configTypes) {
+    const ctor = this.constructor;
+    const types = configTypes || ctor.DefaultType;
+    for (const [property, expectedTypes] of Object.entries(types)) {
       const value = config[property];
       const valueType = isElement(value) ? "element" : toType(value);
       if (!new RegExp(expectedTypes).test(valueType)) {
-        throw new TypeError(`${this.constructor.NAME.toUpperCase()}: Option "${property}" provided type "${valueType}" but expected type "${expectedTypes}".`);
+        throw new TypeError(
+          `${ctor.NAME.toUpperCase()}: Option "${property}" provided type "${valueType}" but expected type "${expectedTypes}".`
+        );
       }
     }
   }
@@ -1951,23 +1938,23 @@ const VERSION = "5.3.8";
 class BaseComponent extends Config {
   constructor(element, config) {
     super();
-    element = getElement(element);
-    if (!element) {
+    const resolved = getElement(element);
+    if (!resolved) {
       return;
     }
-    this._element = element;
+    this._element = resolved;
     this._config = this._getConfig(config);
-    Data.set(this._element, this.constructor.DATA_KEY, this);
+    const ctor = this.constructor;
+    Data.set(this._element, ctor.DATA_KEY, this);
   }
-  // Public
   dispose() {
-    Data.remove(this._element, this.constructor.DATA_KEY);
-    EventHandler.off(this._element, this.constructor.EVENT_KEY);
+    const ctor = this.constructor;
+    Data.remove(this._element, ctor.DATA_KEY);
+    EventHandler.off(this._element, ctor.EVENT_KEY);
     for (const propertyName of Object.getOwnPropertyNames(this)) {
       this[propertyName] = null;
     }
   }
-  // Private
   _queueCallback(callback, element, isAnimated = true) {
     executeAfterTransition(callback, element, isAnimated);
   }
@@ -1977,7 +1964,6 @@ class BaseComponent extends Config {
     this._typeCheckConfig(config);
     return config;
   }
-  // Static
   static getInstance(element) {
     return Data.get(getElement(element), this.DATA_KEY);
   }
@@ -1998,7 +1984,7 @@ class BaseComponent extends Config {
   }
 }
 const getSelector = (element) => {
-  let selector = element.getAttribute("data-bs-target");
+  let selector = element.getAttribute("data-tblr-target") || element.getAttribute("data-bs-target");
   if (!selector || selector === "#") {
     let hrefAttribute = element.getAttribute("href");
     if (!hrefAttribute || !hrefAttribute.includes("#") && !hrefAttribute.startsWith(".")) {
@@ -2013,20 +1999,20 @@ const getSelector = (element) => {
 };
 const SelectorEngine = {
   find(selector, element = document.documentElement) {
-    return [].concat(...Element.prototype.querySelectorAll.call(element, selector));
+    return Array.from(element.querySelectorAll(selector));
   },
   findOne(selector, element = document.documentElement) {
-    return Element.prototype.querySelector.call(element, selector);
+    return element.querySelector(selector);
   },
   children(element, selector) {
-    return [].concat(...element.children).filter((child) => child.matches(selector));
+    return Array.from(element.children).filter((child) => child.matches(selector));
   },
   parents(element, selector) {
     const parents = [];
-    let ancestor = element.parentNode.closest(selector);
+    let ancestor = element.parentNode && element.parentNode.closest(selector);
     while (ancestor) {
       parents.push(ancestor);
-      ancestor = ancestor.parentNode.closest(selector);
+      ancestor = ancestor.parentNode && ancestor.parentNode.closest(selector);
     }
     return parents;
   },
@@ -2040,7 +2026,6 @@ const SelectorEngine = {
     }
     return [];
   },
-  // TODO: this is now unused; remove later along with prev()
   next(element, selector) {
     let next = element.nextElementSibling;
     while (next) {
@@ -2052,7 +2037,16 @@ const SelectorEngine = {
     return [];
   },
   focusableChildren(element) {
-    const focusables = ["a", "button", "input", "textarea", "select", "details", "[tabindex]", '[contenteditable="true"]'].map((selector) => `${selector}:not([tabindex^="-"])`).join(",");
+    const focusables = [
+      "a",
+      "button",
+      "input",
+      "textarea",
+      "select",
+      "details",
+      "[tabindex]",
+      '[contenteditable="true"]'
+    ].map((selector) => `${selector}:not([tabindex^="-"])`).join(",");
     return this.find(focusables, element).filter((el) => !isDisabled(el) && isVisible(el));
   },
   getSelectorFromElement(element) {
@@ -2074,7 +2068,7 @@ const SelectorEngine = {
 const enableDismissTrigger = (component, method = "hide") => {
   const clickEvent = `click.dismiss${component.EVENT_KEY}`;
   const name = component.NAME;
-  EventHandler.on(document, clickEvent, `[data-bs-dismiss="${name}"]`, function(event) {
+  EventHandler.on(document, clickEvent, `[data-bs-dismiss="${name}"], [data-tblr-dismiss="${name}"]`, function(event) {
     if (["A", "AREA"].includes(this.tagName)) {
       event.preventDefault();
     }
@@ -2094,75 +2088,50 @@ const EVENT_CLOSED = `closed${EVENT_KEY$b}`;
 const CLASS_NAME_FADE$5 = "fade";
 const CLASS_NAME_SHOW$8 = "show";
 class Alert extends BaseComponent {
-  // Getters
   static get NAME() {
     return NAME$f;
   }
-  // Public
   close() {
     const closeEvent = EventHandler.trigger(this._element, EVENT_CLOSE);
-    if (closeEvent.defaultPrevented) {
+    if (closeEvent == null ? void 0 : closeEvent.defaultPrevented) {
       return;
     }
     this._element.classList.remove(CLASS_NAME_SHOW$8);
     const isAnimated = this._element.classList.contains(CLASS_NAME_FADE$5);
     this._queueCallback(() => this._destroyElement(), this._element, isAnimated);
   }
-  // Private
   _destroyElement() {
     this._element.remove();
     EventHandler.trigger(this._element, EVENT_CLOSED);
     this.dispose();
   }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = Alert.getOrCreateInstance(this);
-      if (typeof config !== "string") {
-        return;
-      }
-      if (data[config] === void 0 || config.startsWith("_") || config === "constructor") {
-        throw new TypeError(`No method named "${config}"`);
-      }
-      data[config](this);
-    });
-  }
 }
 enableDismissTrigger(Alert, "close");
-defineJQueryPlugin(Alert);
 const NAME$e = "button";
 const DATA_KEY$9 = "bs.button";
 const EVENT_KEY$a = `.${DATA_KEY$9}`;
 const DATA_API_KEY$6 = ".data-api";
 const CLASS_NAME_ACTIVE$3 = "active";
-const SELECTOR_DATA_TOGGLE$5 = '[data-bs-toggle="button"]';
+const SELECTOR_DATA_TOGGLE$5 = '[data-bs-toggle="button"], [data-tblr-toggle="button"]';
 const EVENT_CLICK_DATA_API$6 = `click${EVENT_KEY$a}${DATA_API_KEY$6}`;
 class Button extends BaseComponent {
-  // Getters
   static get NAME() {
     return NAME$e;
   }
-  // Public
   toggle() {
-    this._element.setAttribute("aria-pressed", this._element.classList.toggle(CLASS_NAME_ACTIVE$3));
-  }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = Button.getOrCreateInstance(this);
-      if (config === "toggle") {
-        data[config]();
-      }
-    });
+    this._element.setAttribute("aria-pressed", String(this._element.classList.toggle(CLASS_NAME_ACTIVE$3)));
   }
 }
 EventHandler.on(document, EVENT_CLICK_DATA_API$6, SELECTOR_DATA_TOGGLE$5, (event) => {
+  var _a;
   event.preventDefault();
-  const button = event.target.closest(SELECTOR_DATA_TOGGLE$5);
-  const data = Button.getOrCreateInstance(button);
+  const target = (_a = event.target) == null ? void 0 : _a.closest(SELECTOR_DATA_TOGGLE$5);
+  if (!target) {
+    return;
+  }
+  const data = Button.getOrCreateInstance(target);
   data.toggle();
 });
-defineJQueryPlugin(Button);
 const NAME$d = "swipe";
 const EVENT_KEY$9 = ".bs.swipe";
 const EVENT_TOUCHSTART = `touchstart${EVENT_KEY$9}`;
@@ -2196,7 +2165,6 @@ class Swipe extends Config {
     this._supportPointerEvents = Boolean(window.PointerEvent);
     this._initEvents();
   }
-  // Getters
   static get Default() {
     return Default$c;
   }
@@ -2206,11 +2174,9 @@ class Swipe extends Config {
   static get NAME() {
     return NAME$d;
   }
-  // Public
   dispose() {
     EventHandler.off(this._element, EVENT_KEY$9);
   }
-  // Private
   _start(event) {
     if (!this._supportPointerEvents) {
       this._deltaX = event.touches[0].clientX;
@@ -2256,7 +2222,6 @@ class Swipe extends Config {
   _eventIsPointerPenTouch(event) {
     return this._supportPointerEvents && (event.pointerType === POINTER_TYPE_PEN || event.pointerType === POINTER_TYPE_TOUCH);
   }
-  // Static
   static isSupported() {
     return "ontouchstart" in document.documentElement || navigator.maxTouchPoints > 0;
   }
@@ -2292,8 +2257,8 @@ const SELECTOR_ITEM = ".carousel-item";
 const SELECTOR_ACTIVE_ITEM = SELECTOR_ACTIVE + SELECTOR_ITEM;
 const SELECTOR_ITEM_IMG = ".carousel-item img";
 const SELECTOR_INDICATORS = ".carousel-indicators";
-const SELECTOR_DATA_SLIDE = "[data-bs-slide], [data-bs-slide-to]";
-const SELECTOR_DATA_RIDE = '[data-bs-ride="carousel"]';
+const SELECTOR_DATA_SLIDE = "[data-bs-slide], [data-bs-slide-to], [data-tblr-slide], [data-tblr-slide-to]";
+const SELECTOR_DATA_RIDE = '[data-bs-ride="carousel"], [data-tblr-ride="carousel"]';
 const KEY_TO_DIRECTION = {
   [ARROW_LEFT_KEY$1]: DIRECTION_RIGHT,
   [ARROW_RIGHT_KEY$1]: DIRECTION_LEFT
@@ -2308,7 +2273,6 @@ const Default$b = {
 };
 const DefaultType$b = {
   interval: "(number|boolean)",
-  // TODO:v6 remove boolean support
   keyboard: "boolean",
   pause: "(string|boolean)",
   ride: "(boolean|string)",
@@ -2329,7 +2293,6 @@ class Carousel extends BaseComponent {
       this.cycle();
     }
   }
-  // Getters
   static get Default() {
     return Default$b;
   }
@@ -2339,7 +2302,6 @@ class Carousel extends BaseComponent {
   static get NAME() {
     return NAME$c;
   }
-  // Public
   next() {
     this._slide(ORDER_NEXT);
   }
@@ -2394,7 +2356,6 @@ class Carousel extends BaseComponent {
     }
     super.dispose();
   }
-  // Private
   _configAfterMerge(config) {
     config.defaultInterval = config.interval;
     return config;
@@ -2452,7 +2413,7 @@ class Carousel extends BaseComponent {
     const activeIndicator = SelectorEngine.findOne(SELECTOR_ACTIVE, this._indicatorsElement);
     activeIndicator.classList.remove(CLASS_NAME_ACTIVE$2);
     activeIndicator.removeAttribute("aria-current");
-    const newActiveIndicator = SelectorEngine.findOne(`[data-bs-slide-to="${index}"]`, this._indicatorsElement);
+    const newActiveIndicator = SelectorEngine.findOne(`[data-bs-slide-to="${index}"], [data-tblr-slide-to="${index}"]`, this._indicatorsElement);
     if (newActiveIndicator) {
       newActiveIndicator.classList.add(CLASS_NAME_ACTIVE$2);
       newActiveIndicator.setAttribute("aria-current", "true");
@@ -2463,7 +2424,7 @@ class Carousel extends BaseComponent {
     if (!element) {
       return;
     }
-    const elementInterval = Number.parseInt(element.getAttribute("data-bs-interval"), 10);
+    const elementInterval = Number.parseInt(element.getAttribute("data-bs-interval") || element.getAttribute("data-tblr-interval") || "", 10);
     this._config.interval = elementInterval || this._config.defaultInterval;
   }
   _slide(order2, element = null) {
@@ -2542,22 +2503,6 @@ class Carousel extends BaseComponent {
     }
     return order2 === ORDER_PREV ? DIRECTION_RIGHT : DIRECTION_LEFT;
   }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = Carousel.getOrCreateInstance(this, config);
-      if (typeof config === "number") {
-        data.to(config);
-        return;
-      }
-      if (typeof config === "string") {
-        if (data[config] === void 0 || config.startsWith("_") || config === "constructor") {
-          throw new TypeError(`No method named "${config}"`);
-        }
-        data[config]();
-      }
-    });
-  }
 }
 EventHandler.on(document, EVENT_CLICK_DATA_API$5, SELECTOR_DATA_SLIDE, function(event) {
   const target = SelectorEngine.getElementFromSelector(this);
@@ -2566,9 +2511,9 @@ EventHandler.on(document, EVENT_CLICK_DATA_API$5, SELECTOR_DATA_SLIDE, function(
   }
   event.preventDefault();
   const carousel = Carousel.getOrCreateInstance(target);
-  const slideIndex = this.getAttribute("data-bs-slide-to");
+  const slideIndex = this.getAttribute("data-bs-slide-to") || this.getAttribute("data-tblr-slide-to");
   if (slideIndex) {
-    carousel.to(slideIndex);
+    carousel.to(Number(slideIndex));
     carousel._maybeEnableCycle();
     return;
   }
@@ -2586,7 +2531,6 @@ EventHandler.on(window, EVENT_LOAD_DATA_API$3, () => {
     Carousel.getOrCreateInstance(carousel);
   }
 });
-defineJQueryPlugin(Carousel);
 const NAME$b = "collapse";
 const DATA_KEY$7 = "bs.collapse";
 const EVENT_KEY$7 = `.${DATA_KEY$7}`;
@@ -2605,7 +2549,7 @@ const CLASS_NAME_HORIZONTAL = "collapse-horizontal";
 const WIDTH = "width";
 const HEIGHT = "height";
 const SELECTOR_ACTIVES = ".collapse.show, .collapse.collapsing";
-const SELECTOR_DATA_TOGGLE$4 = '[data-bs-toggle="collapse"]';
+const SELECTOR_DATA_TOGGLE$4 = '[data-bs-toggle="collapse"], [data-tblr-toggle="collapse"]';
 const Default$a = {
   parent: null,
   toggle: true
@@ -2635,7 +2579,6 @@ class Collapse extends BaseComponent {
       this.toggle();
     }
   }
-  // Getters
   static get Default() {
     return Default$a;
   }
@@ -2645,7 +2588,6 @@ class Collapse extends BaseComponent {
   static get NAME() {
     return NAME$b;
   }
-  // Public
   toggle() {
     if (this._isShown()) {
       this.hide();
@@ -2659,15 +2601,13 @@ class Collapse extends BaseComponent {
     }
     let activeChildren = [];
     if (this._config.parent) {
-      activeChildren = this._getFirstLevelChildren(SELECTOR_ACTIVES).filter((element) => element !== this._element).map((element) => Collapse.getOrCreateInstance(element, {
-        toggle: false
-      }));
+      activeChildren = this._getFirstLevelChildren(SELECTOR_ACTIVES).filter((element) => element !== this._element).map((element) => Collapse.getOrCreateInstance(element, { toggle: false }));
     }
     if (activeChildren.length && activeChildren[0]._isTransitioning) {
       return;
     }
     const startEvent = EventHandler.trigger(this._element, EVENT_SHOW$6);
-    if (startEvent.defaultPrevented) {
+    if (startEvent == null ? void 0 : startEvent.defaultPrevented) {
       return;
     }
     for (const activeInstance of activeChildren) {
@@ -2676,7 +2616,7 @@ class Collapse extends BaseComponent {
     const dimension = this._getDimension();
     this._element.classList.remove(CLASS_NAME_COLLAPSE);
     this._element.classList.add(CLASS_NAME_COLLAPSING);
-    this._element.style[dimension] = 0;
+    this._element.style[dimension] = "0";
     this._addAriaAndCollapsedClass(this._triggerArray, true);
     this._isTransitioning = true;
     const complete = () => {
@@ -2696,7 +2636,7 @@ class Collapse extends BaseComponent {
       return;
     }
     const startEvent = EventHandler.trigger(this._element, EVENT_HIDE$6);
-    if (startEvent.defaultPrevented) {
+    if (startEvent == null ? void 0 : startEvent.defaultPrevented) {
       return;
     }
     const dimension = this._getDimension();
@@ -2720,7 +2660,6 @@ class Collapse extends BaseComponent {
     this._element.style[dimension] = "";
     this._queueCallback(complete, this._element, true);
   }
-  // Private
   _isShown(element = this._element) {
     return element.classList.contains(CLASS_NAME_SHOW$7);
   }
@@ -2754,24 +2693,8 @@ class Collapse extends BaseComponent {
     }
     for (const element of triggerArray) {
       element.classList.toggle(CLASS_NAME_COLLAPSED, !isOpen);
-      element.setAttribute("aria-expanded", isOpen);
+      element.setAttribute("aria-expanded", String(isOpen));
     }
-  }
-  // Static
-  static jQueryInterface(config) {
-    const _config = {};
-    if (typeof config === "string" && /show|hide/.test(config)) {
-      _config.toggle = false;
-    }
-    return this.each(function() {
-      const data = Collapse.getOrCreateInstance(this, _config);
-      if (typeof config === "string") {
-        if (typeof data[config] === "undefined") {
-          throw new TypeError(`No method named "${config}"`);
-        }
-        data[config]();
-      }
-    });
   }
 }
 EventHandler.on(document, EVENT_CLICK_DATA_API$4, SELECTOR_DATA_TOGGLE$4, function(event) {
@@ -2779,12 +2702,25 @@ EventHandler.on(document, EVENT_CLICK_DATA_API$4, SELECTOR_DATA_TOGGLE$4, functi
     event.preventDefault();
   }
   for (const element of SelectorEngine.getMultipleElementsFromSelector(this)) {
-    Collapse.getOrCreateInstance(element, {
-      toggle: false
-    }).toggle();
+    Collapse.getOrCreateInstance(element, { toggle: false }).toggle();
   }
 });
-defineJQueryPlugin(Collapse);
+var __defProp$3 = Object.defineProperty;
+var __getOwnPropSymbols$3 = Object.getOwnPropertySymbols;
+var __hasOwnProp$3 = Object.prototype.hasOwnProperty;
+var __propIsEnum$3 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$3 = (obj, key, value) => key in obj ? __defProp$3(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$3 = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp$3.call(b, prop))
+      __defNormalProp$3(a, prop, b[prop]);
+  if (__getOwnPropSymbols$3)
+    for (var prop of __getOwnPropSymbols$3(b)) {
+      if (__propIsEnum$3.call(b, prop))
+        __defNormalProp$3(a, prop, b[prop]);
+    }
+  return a;
+};
 const NAME$a = "dropdown";
 const DATA_KEY$6 = "bs.dropdown";
 const EVENT_KEY$6 = `.${DATA_KEY$6}`;
@@ -2807,8 +2743,8 @@ const CLASS_NAME_DROPEND = "dropend";
 const CLASS_NAME_DROPSTART = "dropstart";
 const CLASS_NAME_DROPUP_CENTER = "dropup-center";
 const CLASS_NAME_DROPDOWN_CENTER = "dropdown-center";
-const SELECTOR_DATA_TOGGLE$3 = '[data-bs-toggle="dropdown"]:not(.disabled):not(:disabled)';
-const SELECTOR_DATA_TOGGLE_SHOWN = `${SELECTOR_DATA_TOGGLE$3}.${CLASS_NAME_SHOW$6}`;
+const SELECTOR_DATA_TOGGLE$3 = '[data-bs-toggle="dropdown"]:not(.disabled):not(:disabled), [data-tblr-toggle="dropdown"]:not(.disabled):not(:disabled)';
+const SELECTOR_DATA_TOGGLE_SHOWN = `.${CLASS_NAME_SHOW$6}[data-bs-toggle="dropdown"], .${CLASS_NAME_SHOW$6}[data-tblr-toggle="dropdown"]`;
 const SELECTOR_MENU = ".dropdown-menu";
 const SELECTOR_NAVBAR = ".navbar";
 const SELECTOR_NAVBAR_NAV = ".navbar-nav";
@@ -2845,7 +2781,6 @@ class Dropdown extends BaseComponent {
     this._menu = SelectorEngine.next(this._element, SELECTOR_MENU)[0] || SelectorEngine.prev(this._element, SELECTOR_MENU)[0] || SelectorEngine.findOne(SELECTOR_MENU, this._parent);
     this._inNavbar = this._detectNavbar();
   }
-  // Getters
   static get Default() {
     return Default$9;
   }
@@ -2855,9 +2790,8 @@ class Dropdown extends BaseComponent {
   static get NAME() {
     return NAME$a;
   }
-  // Public
   toggle() {
-    return this._isShown() ? this.hide() : this.show();
+    this._isShown() ? this.hide() : this.show();
   }
   show() {
     if (isDisabled(this._element) || this._isShown()) {
@@ -2877,7 +2811,7 @@ class Dropdown extends BaseComponent {
       }
     }
     this._element.focus();
-    this._element.setAttribute("aria-expanded", true);
+    this._element.setAttribute("aria-expanded", "true");
     this._menu.classList.add(CLASS_NAME_SHOW$6);
     this._element.classList.add(CLASS_NAME_SHOW$6);
     EventHandler.trigger(this._element, EVENT_SHOWN$5, relatedTarget);
@@ -2903,7 +2837,6 @@ class Dropdown extends BaseComponent {
       this._popper.update();
     }
   }
-  // Private
   _completeHide(relatedTarget) {
     const hideEvent = EventHandler.trigger(this._element, EVENT_HIDE$5, relatedTarget);
     if (hideEvent.defaultPrevented) {
@@ -2972,9 +2905,7 @@ class Dropdown extends BaseComponent {
     return this._element.closest(SELECTOR_NAVBAR) !== null;
   }
   _getOffset() {
-    const {
-      offset: offset2
-    } = this._config;
+    const { offset: offset2 } = this._config;
     if (typeof offset2 === "string") {
       return offset2.split(",").map((value) => Number.parseInt(value, 10));
     }
@@ -2986,17 +2917,20 @@ class Dropdown extends BaseComponent {
   _getPopperConfig() {
     const defaultBsPopperConfig = {
       placement: this._getPlacement(),
-      modifiers: [{
-        name: "preventOverflow",
-        options: {
-          boundary: this._config.boundary
+      modifiers: [
+        {
+          name: "preventOverflow",
+          options: {
+            boundary: this._config.boundary
+          }
+        },
+        {
+          name: "offset",
+          options: {
+            offset: this._getOffset()
+          }
         }
-      }, {
-        name: "offset",
-        options: {
-          offset: this._getOffset()
-        }
-      }]
+      ]
     };
     if (this._inNavbar || this._config.display === "static") {
       Manipulator.setDataAttribute(this._menu, "popper", "static");
@@ -3005,30 +2939,15 @@ class Dropdown extends BaseComponent {
         enabled: false
       }];
     }
-    return __spreadValues(__spreadValues({}, defaultBsPopperConfig), execute(this._config.popperConfig, [void 0, defaultBsPopperConfig]));
+    const popperConfig = execute(this._config.popperConfig, [void 0, defaultBsPopperConfig]);
+    return __spreadValues$3(__spreadValues$3({}, defaultBsPopperConfig), typeof popperConfig === "object" && popperConfig !== null ? popperConfig : {});
   }
-  _selectMenuItem({
-    key,
-    target
-  }) {
+  _selectMenuItem({ key, target }) {
     const items = SelectorEngine.find(SELECTOR_VISIBLE_ITEMS, this._menu).filter((element) => isVisible(element));
     if (!items.length) {
       return;
     }
     getNextActiveElement(items, target, key === ARROW_DOWN_KEY$1, !items.includes(target)).focus();
-  }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = Dropdown.getOrCreateInstance(this, config);
-      if (typeof config !== "string") {
-        return;
-      }
-      if (typeof data[config] === "undefined") {
-        throw new TypeError(`No method named "${config}"`);
-      }
-      data[config]();
-    });
   }
   static clearMenus(event) {
     if (event.button === RIGHT_MOUSE_BUTTON || event.type === "keyup" && event.key !== TAB_KEY$1) {
@@ -3048,9 +2967,7 @@ class Dropdown extends BaseComponent {
       if (context._menu.contains(event.target) && (event.type === "keyup" && event.key === TAB_KEY$1 || /input|select|option|textarea|form/i.test(event.target.tagName))) {
         continue;
       }
-      const relatedTarget = {
-        relatedTarget: context._element
-      };
+      const relatedTarget = { relatedTarget: context._element };
       if (event.type === "click") {
         relatedTarget.clickEvent = event;
       }
@@ -3091,7 +3008,6 @@ EventHandler.on(document, EVENT_CLICK_DATA_API$3, SELECTOR_DATA_TOGGLE$3, functi
   event.preventDefault();
   Dropdown.getOrCreateInstance(this).toggle();
 });
-defineJQueryPlugin(Dropdown);
 const NAME$9 = "backdrop";
 const CLASS_NAME_FADE$4 = "fade";
 const CLASS_NAME_SHOW$5 = "show";
@@ -3101,9 +3017,7 @@ const Default$8 = {
   clickCallback: null,
   isAnimated: false,
   isVisible: true,
-  // if false, we use the backdrop helper without adding any element to the dom
   rootElement: "body"
-  // give the choice to place backdrop under different elements
 };
 const DefaultType$8 = {
   className: "string",
@@ -3119,7 +3033,6 @@ class Backdrop extends Config {
     this._isAppended = false;
     this._element = null;
   }
-  // Getters
   static get Default() {
     return Default$8;
   }
@@ -3129,7 +3042,6 @@ class Backdrop extends Config {
   static get NAME() {
     return NAME$9;
   }
-  // Public
   show(callback) {
     if (!this._config.isVisible) {
       execute(callback);
@@ -3164,7 +3076,6 @@ class Backdrop extends Config {
     this._element.remove();
     this._isAppended = false;
   }
-  // Private
   _getElement() {
     if (!this._element) {
       const backdrop = document.createElement("div");
@@ -3206,7 +3117,6 @@ const TAB_NAV_BACKWARD = "backward";
 const Default$7 = {
   autofocus: true,
   trapElement: null
-  // The element to trap focus inside of
 };
 const DefaultType$7 = {
   autofocus: "boolean",
@@ -3219,7 +3129,6 @@ class FocusTrap extends Config {
     this._isActive = false;
     this._lastTabNavDirection = null;
   }
-  // Getters
   static get Default() {
     return Default$7;
   }
@@ -3229,7 +3138,6 @@ class FocusTrap extends Config {
   static get NAME() {
     return NAME$8;
   }
-  // Public
   activate() {
     if (this._isActive) {
       return;
@@ -3249,11 +3157,8 @@ class FocusTrap extends Config {
     this._isActive = false;
     EventHandler.off(document, EVENT_KEY$5);
   }
-  // Private
   _handleFocusin(event) {
-    const {
-      trapElement
-    } = this._config;
+    const { trapElement } = this._config;
     if (event.target === document || event.target === trapElement || trapElement.contains(event.target)) {
       return;
     }
@@ -3281,7 +3186,6 @@ class ScrollBarHelper {
   constructor() {
     this._element = document.body;
   }
-  // Public
   getWidth() {
     const documentWidth = document.documentElement.clientWidth;
     return Math.abs(window.innerWidth - documentWidth);
@@ -3302,7 +3206,6 @@ class ScrollBarHelper {
   isOverflowing() {
     return this.getWidth() > 0;
   }
-  // Private
   _disableOverFlow() {
     this._saveInitialAttribute(this._element, "overflow");
     this._element.style.overflow = "hidden";
@@ -3333,7 +3236,7 @@ class ScrollBarHelper {
         return;
       }
       Manipulator.removeDataAttribute(element, styleProperty);
-      element.style.setProperty(styleProperty, value);
+      element.style.setProperty(styleProperty, String(value));
     };
     this._applyManipulationCallback(selector, manipulationCallBack);
   }
@@ -3369,7 +3272,7 @@ const CLASS_NAME_STATIC = "modal-static";
 const OPEN_SELECTOR$1 = ".modal.show";
 const SELECTOR_DIALOG = ".modal-dialog";
 const SELECTOR_MODAL_BODY = ".modal-body";
-const SELECTOR_DATA_TOGGLE$2 = '[data-bs-toggle="modal"]';
+const SELECTOR_DATA_TOGGLE$2 = '[data-bs-toggle="modal"], [data-tblr-toggle="modal"]';
 const Default$6 = {
   backdrop: true,
   focus: true,
@@ -3391,7 +3294,6 @@ class Modal extends BaseComponent {
     this._scrollBar = new ScrollBarHelper();
     this._addEventListeners();
   }
-  // Getters
   static get Default() {
     return Default$6;
   }
@@ -3401,7 +3303,6 @@ class Modal extends BaseComponent {
   static get NAME() {
     return NAME$7;
   }
-  // Public
   toggle(relatedTarget) {
     return this._isShown ? this.hide() : this.show(relatedTarget);
   }
@@ -3446,11 +3347,9 @@ class Modal extends BaseComponent {
   handleUpdate() {
     this._adjustDialog();
   }
-  // Private
   _initializeBackDrop() {
     return new Backdrop({
       isVisible: Boolean(this._config.backdrop),
-      // 'static' option will be translated to true, and booleans will keep their value,
       isAnimated: this._isAnimated()
     });
   }
@@ -3465,7 +3364,7 @@ class Modal extends BaseComponent {
     }
     this._element.style.display = "block";
     this._element.removeAttribute("aria-hidden");
-    this._element.setAttribute("aria-modal", true);
+    this._element.setAttribute("aria-modal", "true");
     this._element.setAttribute("role", "dialog");
     this._element.scrollTop = 0;
     const modalBody = SelectorEngine.findOne(SELECTOR_MODAL_BODY, this._dialog);
@@ -3518,7 +3417,7 @@ class Modal extends BaseComponent {
   }
   _hideModal() {
     this._element.style.display = "none";
-    this._element.setAttribute("aria-hidden", true);
+    this._element.setAttribute("aria-hidden", "true");
     this._element.removeAttribute("aria-modal");
     this._element.removeAttribute("role");
     this._isTransitioning = false;
@@ -3554,9 +3453,6 @@ class Modal extends BaseComponent {
     }, this._dialog);
     this._element.focus();
   }
-  /**
-   * The following methods are used to handle overflowing modals
-   */
   _adjustDialog() {
     const isModalOverflowing = this._element.scrollHeight > document.documentElement.clientHeight;
     const scrollbarWidth = this._scrollBar.getWidth();
@@ -3573,19 +3469,6 @@ class Modal extends BaseComponent {
   _resetAdjustments() {
     this._element.style.paddingLeft = "";
     this._element.style.paddingRight = "";
-  }
-  // Static
-  static jQueryInterface(config, relatedTarget) {
-    return this.each(function() {
-      const data = Modal.getOrCreateInstance(this, config);
-      if (typeof config !== "string") {
-        return;
-      }
-      if (typeof data[config] === "undefined") {
-        throw new TypeError(`No method named "${config}"`);
-      }
-      data[config](relatedTarget);
-    });
   }
 }
 EventHandler.on(document, EVENT_CLICK_DATA_API$2, SELECTOR_DATA_TOGGLE$2, function(event) {
@@ -3611,7 +3494,6 @@ EventHandler.on(document, EVENT_CLICK_DATA_API$2, SELECTOR_DATA_TOGGLE$2, functi
   data.toggle(this);
 });
 enableDismissTrigger(Modal);
-defineJQueryPlugin(Modal);
 const NAME$6 = "offcanvas";
 const DATA_KEY$3 = "bs.offcanvas";
 const EVENT_KEY$3 = `.${DATA_KEY$3}`;
@@ -3631,7 +3513,7 @@ const EVENT_HIDDEN$3 = `hidden${EVENT_KEY$3}`;
 const EVENT_RESIZE = `resize${EVENT_KEY$3}`;
 const EVENT_CLICK_DATA_API$1 = `click${EVENT_KEY$3}${DATA_API_KEY$1}`;
 const EVENT_KEYDOWN_DISMISS = `keydown.dismiss${EVENT_KEY$3}`;
-const SELECTOR_DATA_TOGGLE$1 = '[data-bs-toggle="offcanvas"]';
+const SELECTOR_DATA_TOGGLE$1 = '[data-bs-toggle="offcanvas"], [data-tblr-toggle="offcanvas"]';
 const Default$5 = {
   backdrop: true,
   keyboard: true,
@@ -3650,7 +3532,6 @@ class Offcanvas extends BaseComponent {
     this._focustrap = this._initializeFocusTrap();
     this._addEventListeners();
   }
-  // Getters
   static get Default() {
     return Default$5;
   }
@@ -3660,7 +3541,6 @@ class Offcanvas extends BaseComponent {
   static get NAME() {
     return NAME$6;
   }
-  // Public
   toggle(relatedTarget) {
     return this._isShown ? this.hide() : this.show(relatedTarget);
   }
@@ -3668,9 +3548,7 @@ class Offcanvas extends BaseComponent {
     if (this._isShown) {
       return;
     }
-    const showEvent = EventHandler.trigger(this._element, EVENT_SHOW$3, {
-      relatedTarget
-    });
+    const showEvent = EventHandler.trigger(this._element, EVENT_SHOW$3, { relatedTarget });
     if (showEvent.defaultPrevented) {
       return;
     }
@@ -3679,7 +3557,7 @@ class Offcanvas extends BaseComponent {
     if (!this._config.scroll) {
       new ScrollBarHelper().hide();
     }
-    this._element.setAttribute("aria-modal", true);
+    this._element.setAttribute("aria-modal", "true");
     this._element.setAttribute("role", "dialog");
     this._element.classList.add(CLASS_NAME_SHOWING$1);
     const completeCallBack = () => {
@@ -3688,9 +3566,7 @@ class Offcanvas extends BaseComponent {
       }
       this._element.classList.add(CLASS_NAME_SHOW$3);
       this._element.classList.remove(CLASS_NAME_SHOWING$1);
-      EventHandler.trigger(this._element, EVENT_SHOWN$3, {
-        relatedTarget
-      });
+      EventHandler.trigger(this._element, EVENT_SHOWN$3, { relatedTarget });
     };
     this._queueCallback(completeCallBack, this._element, true);
   }
@@ -3723,7 +3599,6 @@ class Offcanvas extends BaseComponent {
     this._focustrap.deactivate();
     super.dispose();
   }
-  // Private
   _initializeBackDrop() {
     const clickCallback = () => {
       if (this._config.backdrop === "static") {
@@ -3732,13 +3607,13 @@ class Offcanvas extends BaseComponent {
       }
       this.hide();
     };
-    const isVisible2 = Boolean(this._config.backdrop);
+    const isBackdropVisible = Boolean(this._config.backdrop);
     return new Backdrop({
       className: CLASS_NAME_BACKDROP,
-      isVisible: isVisible2,
+      isVisible: isBackdropVisible,
       isAnimated: true,
       rootElement: this._element.parentNode,
-      clickCallback: isVisible2 ? clickCallback : null
+      clickCallback: isBackdropVisible ? clickCallback : null
     });
   }
   _initializeFocusTrap() {
@@ -3756,19 +3631,6 @@ class Offcanvas extends BaseComponent {
         return;
       }
       EventHandler.trigger(this._element, EVENT_HIDE_PREVENTED);
-    });
-  }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = Offcanvas.getOrCreateInstance(this, config);
-      if (typeof config !== "string") {
-        return;
-      }
-      if (data[config] === void 0 || config.startsWith("_") || config === "constructor") {
-        throw new TypeError(`No method named "${config}"`);
-      }
-      data[config](this);
     });
   }
 }
@@ -3805,10 +3667,8 @@ EventHandler.on(window, EVENT_RESIZE, () => {
   }
 });
 enableDismissTrigger(Offcanvas);
-defineJQueryPlugin(Offcanvas);
 const ARIA_ATTRIBUTE_PATTERN = /^aria-[\w-]*$/i;
 const DefaultAllowlist = {
-  // Global attributes allowed on any supplied element below.
   "*": ["class", "dir", "id", "lang", "role", ARIA_ATTRIBUTE_PATTERN],
   a: ["target", "href", "title", "rel"],
   area: [],
@@ -3843,7 +3703,16 @@ const DefaultAllowlist = {
   u: [],
   ul: []
 };
-const uriAttributes = /* @__PURE__ */ new Set(["background", "cite", "href", "itemtype", "longdesc", "poster", "src", "xlink:href"]);
+const uriAttributes = /* @__PURE__ */ new Set([
+  "background",
+  "cite",
+  "href",
+  "itemtype",
+  "longdesc",
+  "poster",
+  "src",
+  "xlink:href"
+]);
 const SAFE_URL_PATTERN = /^(?!javascript:)(?:[a-z0-9+.-]+:|[^&:/?#]*(?:[/?#]|$))/i;
 const allowedAttribute = (attribute, allowedAttributeList) => {
   const attributeName = attribute.nodeName.toLowerCase();
@@ -3864,15 +3733,15 @@ function sanitizeHtml(unsafeHtml, allowList, sanitizeFunction) {
   }
   const domParser = new window.DOMParser();
   const createdDocument = domParser.parseFromString(unsafeHtml, "text/html");
-  const elements = [].concat(...createdDocument.body.querySelectorAll("*"));
+  const elements = Array.from(createdDocument.body.querySelectorAll("*"));
   for (const element of elements) {
     const elementName = element.nodeName.toLowerCase();
     if (!Object.keys(allowList).includes(elementName)) {
       element.remove();
       continue;
     }
-    const attributeList = [].concat(...element.attributes);
-    const allowedAttributes = [].concat(allowList["*"] || [], allowList[elementName] || []);
+    const attributeList = Array.from(element.attributes);
+    const allowedAttributes = [...allowList["*"] || [], ...allowList[elementName] || []];
     for (const attribute of attributeList) {
       if (!allowedAttribute(attribute, allowedAttributes)) {
         element.removeAttribute(attribute.nodeName);
@@ -3881,11 +3750,26 @@ function sanitizeHtml(unsafeHtml, allowList, sanitizeFunction) {
   }
   return createdDocument.body.innerHTML;
 }
+var __defProp$2 = Object.defineProperty;
+var __getOwnPropSymbols$2 = Object.getOwnPropertySymbols;
+var __hasOwnProp$2 = Object.prototype.hasOwnProperty;
+var __propIsEnum$2 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$2 = (obj, key, value) => key in obj ? __defProp$2(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$2 = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp$2.call(b, prop))
+      __defNormalProp$2(a, prop, b[prop]);
+  if (__getOwnPropSymbols$2)
+    for (var prop of __getOwnPropSymbols$2(b)) {
+      if (__propIsEnum$2.call(b, prop))
+        __defNormalProp$2(a, prop, b[prop]);
+    }
+  return a;
+};
 const NAME$5 = "TemplateFactory";
 const Default$4 = {
   allowList: DefaultAllowlist,
   content: {},
-  // { selector : text ,  selector2 : text2 , }
   extraClass: "",
   html: false,
   sanitize: true,
@@ -3910,7 +3794,6 @@ class TemplateFactory extends Config {
     super();
     this._config = this._getConfig(config);
   }
-  // Getters
   static get Default() {
     return Default$4;
   }
@@ -3920,7 +3803,6 @@ class TemplateFactory extends Config {
   static get NAME() {
     return NAME$5;
   }
-  // Public
   getContent() {
     return Object.values(this._config.content).map((config) => this._resolvePossibleFunction(config)).filter(Boolean);
   }
@@ -3929,7 +3811,7 @@ class TemplateFactory extends Config {
   }
   changeContent(content) {
     this._checkContent(content);
-    this._config.content = __spreadValues(__spreadValues({}, this._config.content), content);
+    this._config.content = __spreadValues$2(__spreadValues$2({}, this._config.content), content);
     return this;
   }
   toHtml() {
@@ -3945,17 +3827,13 @@ class TemplateFactory extends Config {
     }
     return template;
   }
-  // Private
   _typeCheckConfig(config) {
     super._typeCheckConfig(config);
     this._checkContent(config.content);
   }
   _checkContent(arg) {
     for (const [selector, content] of Object.entries(arg)) {
-      super._typeCheckConfig({
-        selector,
-        entry: content
-      }, DefaultContentType);
+      super._typeCheckConfig({ selector, entry: content }, DefaultContentType);
     }
   }
   _setContent(template, content, selector) {
@@ -3993,6 +3871,25 @@ class TemplateFactory extends Config {
     templateElement.textContent = element.textContent;
   }
 }
+var __defProp$1 = Object.defineProperty;
+var __defProps$1 = Object.defineProperties;
+var __getOwnPropDescs$1 = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols$1 = Object.getOwnPropertySymbols;
+var __hasOwnProp$1 = Object.prototype.hasOwnProperty;
+var __propIsEnum$1 = Object.prototype.propertyIsEnumerable;
+var __defNormalProp$1 = (obj, key, value) => key in obj ? __defProp$1(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues$1 = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp$1.call(b, prop))
+      __defNormalProp$1(a, prop, b[prop]);
+  if (__getOwnPropSymbols$1)
+    for (var prop of __getOwnPropSymbols$1(b)) {
+      if (__propIsEnum$1.call(b, prop))
+        __defNormalProp$1(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps$1 = (a, b) => __defProps$1(a, __getOwnPropDescs$1(b));
 const NAME$4 = "tooltip";
 const DISALLOWED_ATTRIBUTES = /* @__PURE__ */ new Set(["sanitize", "allowList", "sanitizeFn"]);
 const CLASS_NAME_FADE$2 = "fade";
@@ -4074,12 +3971,12 @@ class Tooltip extends BaseComponent {
     this._templateFactory = null;
     this._newContent = null;
     this.tip = null;
+    this._hideModalHandler = null;
     this._setListeners();
     if (!this._config.selector) {
       this._fixTitle();
     }
   }
-  // Getters
   static get Default() {
     return Default$3;
   }
@@ -4089,7 +3986,6 @@ class Tooltip extends BaseComponent {
   static get NAME() {
     return NAME$4;
   }
-  // Public
   enable() {
     this._isEnabled = true;
   }
@@ -4112,8 +4008,11 @@ class Tooltip extends BaseComponent {
   dispose() {
     clearTimeout(this._timeout);
     EventHandler.off(this._element.closest(SELECTOR_MODAL), EVENT_MODAL_HIDE, this._hideModalHandler);
-    if (this._element.getAttribute("data-bs-original-title")) {
-      this._element.setAttribute("title", this._element.getAttribute("data-bs-original-title"));
+    if (this._element.getAttribute("data-bs-original-title") || this._element.getAttribute("data-tblr-original-title")) {
+      this._element.setAttribute(
+        "title",
+        this._element.getAttribute("data-bs-original-title") || this._element.getAttribute("data-tblr-original-title") || ""
+      );
     }
     this._disposePopper();
     super.dispose();
@@ -4134,9 +4033,7 @@ class Tooltip extends BaseComponent {
     this._disposePopper();
     const tip = this._getTipElement();
     this._element.setAttribute("aria-describedby", tip.getAttribute("id"));
-    const {
-      container
-    } = this._config;
+    const { container } = this._config;
     if (!this._element.ownerDocument.documentElement.contains(this.tip)) {
       container.append(tip);
       EventHandler.trigger(this._element, this.constructor.eventName(EVENT_INSERTED));
@@ -4193,7 +4090,6 @@ class Tooltip extends BaseComponent {
       this._popper.update();
     }
   }
-  // Protected
   _isWithContent() {
     return Boolean(this._getTitle());
   }
@@ -4228,9 +4124,7 @@ class Tooltip extends BaseComponent {
     if (this._templateFactory) {
       this._templateFactory.changeContent(content);
     } else {
-      this._templateFactory = new TemplateFactory(__spreadProps(__spreadValues({}, this._config), {
-        // the `content` var has to be after `this._config`
-        // to override config.content in case of popover
+      this._templateFactory = new TemplateFactory(__spreadProps$1(__spreadValues$1({}, this._config), {
         content,
         extraClass: this._resolvePossibleFunction(this._config.customClass)
       }));
@@ -4243,17 +4137,16 @@ class Tooltip extends BaseComponent {
     };
   }
   _getTitle() {
-    return this._resolvePossibleFunction(this._config.title) || this._element.getAttribute("data-bs-original-title");
+    return this._resolvePossibleFunction(this._config.title) || this._element.getAttribute("data-bs-original-title") || this._element.getAttribute("data-tblr-original-title") || "";
   }
-  // Private
   _initializeOnDelegatedTarget(event) {
     return this.constructor.getOrCreateInstance(event.delegateTarget, this._getDelegateConfig());
   }
   _isAnimated() {
-    return this._config.animation || this.tip && this.tip.classList.contains(CLASS_NAME_FADE$2);
+    return this._config.animation || this.tip !== null && this.tip.classList.contains(CLASS_NAME_FADE$2);
   }
   _isShown() {
-    return this.tip && this.tip.classList.contains(CLASS_NAME_SHOW$2);
+    return this.tip !== null && this.tip.classList.contains(CLASS_NAME_SHOW$2);
   }
   _createPopper(tip) {
     const placement = execute(this._config.placement, [this, tip, this._element]);
@@ -4261,9 +4154,7 @@ class Tooltip extends BaseComponent {
     return createPopper(this._element, tip, this._getPopperConfig(attachment));
   }
   _getOffset() {
-    const {
-      offset: offset2
-    } = this._config;
+    const { offset: offset2 } = this._config;
     if (typeof offset2 === "string") {
       return offset2.split(",").map((value) => Number.parseInt(value, 10));
     }
@@ -4278,36 +4169,43 @@ class Tooltip extends BaseComponent {
   _getPopperConfig(attachment) {
     const defaultBsPopperConfig = {
       placement: attachment,
-      modifiers: [{
-        name: "flip",
-        options: {
-          fallbackPlacements: this._config.fallbackPlacements
+      modifiers: [
+        {
+          name: "flip",
+          options: {
+            fallbackPlacements: this._config.fallbackPlacements
+          }
+        },
+        {
+          name: "offset",
+          options: {
+            offset: this._getOffset()
+          }
+        },
+        {
+          name: "preventOverflow",
+          options: {
+            boundary: this._config.boundary
+          }
+        },
+        {
+          name: "arrow",
+          options: {
+            element: `.${this.constructor.NAME}-arrow`
+          }
+        },
+        {
+          name: "preSetPlacement",
+          enabled: true,
+          phase: "beforeMain",
+          fn: (data) => {
+            this._getTipElement().setAttribute("data-popper-placement", data.state.placement);
+          }
         }
-      }, {
-        name: "offset",
-        options: {
-          offset: this._getOffset()
-        }
-      }, {
-        name: "preventOverflow",
-        options: {
-          boundary: this._config.boundary
-        }
-      }, {
-        name: "arrow",
-        options: {
-          element: `.${this.constructor.NAME}-arrow`
-        }
-      }, {
-        name: "preSetPlacement",
-        enabled: true,
-        phase: "beforeMain",
-        fn: (data) => {
-          this._getTipElement().setAttribute("data-popper-placement", data.state.placement);
-        }
-      }]
+      ]
     };
-    return __spreadValues(__spreadValues({}, defaultBsPopperConfig), execute(this._config.popperConfig, [void 0, defaultBsPopperConfig]));
+    const popperConfig = execute(this._config.popperConfig, [void 0, defaultBsPopperConfig]);
+    return __spreadValues$1(__spreadValues$1({}, defaultBsPopperConfig), typeof popperConfig === "object" && popperConfig !== null ? popperConfig : {});
   }
   _setListeners() {
     const triggers = this._config.trigger.split(" ");
@@ -4388,7 +4286,7 @@ class Tooltip extends BaseComponent {
         delete dataAttributes[dataAttribute];
       }
     }
-    config = __spreadValues(__spreadValues({}, dataAttributes), typeof config === "object" && config ? config : {});
+    config = __spreadValues$1(__spreadValues$1({}, dataAttributes), typeof config === "object" && config ? config : {});
     config = this._mergeConfigObj(config);
     config = this._configAfterMerge(config);
     this._typeCheckConfig(config);
@@ -4431,21 +4329,26 @@ class Tooltip extends BaseComponent {
       this.tip = null;
     }
   }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = Tooltip.getOrCreateInstance(this, config);
-      if (typeof config !== "string") {
-        return;
-      }
-      if (typeof data[config] === "undefined") {
-        throw new TypeError(`No method named "${config}"`);
-      }
-      data[config]();
-    });
-  }
 }
-defineJQueryPlugin(Tooltip);
+var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 const NAME$3 = "popover";
 const SELECTOR_TITLE = ".popover-header";
 const SELECTOR_CONTENT = ".popover-body";
@@ -4460,7 +4363,6 @@ const DefaultType$2 = __spreadProps(__spreadValues({}, Tooltip.DefaultType), {
   content: "(null|string|element|function)"
 });
 class Popover extends Tooltip {
-  // Getters
   static get Default() {
     return Default$2;
   }
@@ -4470,11 +4372,9 @@ class Popover extends Tooltip {
   static get NAME() {
     return NAME$3;
   }
-  // Overrides
   _isWithContent() {
-    return this._getTitle() || this._getContent();
+    return Boolean(this._getTitle() || this._getContent());
   }
-  // Private
   _getContentForTemplate() {
     return {
       [SELECTOR_TITLE]: this._getTitle(),
@@ -4484,21 +4384,7 @@ class Popover extends Tooltip {
   _getContent() {
     return this._resolvePossibleFunction(this._config.content);
   }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = Popover.getOrCreateInstance(this, config);
-      if (typeof config !== "string") {
-        return;
-      }
-      if (typeof data[config] === "undefined") {
-        throw new TypeError(`No method named "${config}"`);
-      }
-      data[config]();
-    });
-  }
 }
-defineJQueryPlugin(Popover);
 const NAME$2 = "scrollspy";
 const DATA_KEY$2 = "bs.scrollspy";
 const EVENT_KEY$2 = `.${DATA_KEY$2}`;
@@ -4508,7 +4394,7 @@ const EVENT_CLICK = `click${EVENT_KEY$2}`;
 const EVENT_LOAD_DATA_API$1 = `load${EVENT_KEY$2}${DATA_API_KEY}`;
 const CLASS_NAME_DROPDOWN_ITEM = "dropdown-item";
 const CLASS_NAME_ACTIVE$1 = "active";
-const SELECTOR_DATA_SPY = '[data-bs-spy="scroll"]';
+const SELECTOR_DATA_SPY = '[data-bs-spy="scroll"], [data-tblr-spy="scroll"]';
 const SELECTOR_TARGET_LINKS = "[href]";
 const SELECTOR_NAV_LIST_GROUP = ".nav, .list-group";
 const SELECTOR_NAV_LINKS = ".nav-link";
@@ -4519,7 +4405,6 @@ const SELECTOR_DROPDOWN = ".dropdown";
 const SELECTOR_DROPDOWN_TOGGLE$1 = ".dropdown-toggle";
 const Default$1 = {
   offset: null,
-  // TODO: v6 @deprecated, keep it for backwards compatibility reasons
   rootMargin: "0px 0px -25%",
   smoothScroll: false,
   target: null,
@@ -4527,7 +4412,6 @@ const Default$1 = {
 };
 const DefaultType$1 = {
   offset: "(number|null)",
-  // TODO v6 @deprecated, keep it for backwards compatibility reasons
   rootMargin: "string",
   smoothScroll: "boolean",
   target: "element",
@@ -4547,7 +4431,6 @@ class ScrollSpy extends BaseComponent {
     };
     this.refresh();
   }
-  // Getters
   static get Default() {
     return Default$1;
   }
@@ -4557,7 +4440,6 @@ class ScrollSpy extends BaseComponent {
   static get NAME() {
     return NAME$2;
   }
-  // Public
   refresh() {
     this._initializeTargetsAndObservables();
     this._maybeEnableSmoothScroll();
@@ -4574,7 +4456,6 @@ class ScrollSpy extends BaseComponent {
     this._observer.disconnect();
     super.dispose();
   }
-  // Private
   _configAfterMerge(config) {
     config.target = getElement(config.target) || document.body;
     config.rootMargin = config.offset ? `${config.offset}px 0px -30%` : config.rootMargin;
@@ -4594,11 +4475,8 @@ class ScrollSpy extends BaseComponent {
         event.preventDefault();
         const root = this._rootElement || window;
         const height = observableSection.offsetTop - this._element.offsetTop;
-        if (root.scrollTo) {
-          root.scrollTo({
-            top: height,
-            behavior: "smooth"
-          });
+        if ("scrollTo" in root) {
+          root.scrollTo({ top: height, behavior: "smooth" });
           return;
         }
         root.scrollTop = height;
@@ -4613,7 +4491,6 @@ class ScrollSpy extends BaseComponent {
     };
     return new IntersectionObserver((entries) => this._observerCallback(entries), options);
   }
-  // The logic of selection
   _observerCallback(entries) {
     const targetElement = (entry) => this._targetLinks.get(`#${entry.target.id}`);
     const activate = (entry) => {
@@ -4665,9 +4542,7 @@ class ScrollSpy extends BaseComponent {
     this._activeTarget = target;
     target.classList.add(CLASS_NAME_ACTIVE$1);
     this._activateParents(target);
-    EventHandler.trigger(this._element, EVENT_ACTIVATE, {
-      relatedTarget: target
-    });
+    EventHandler.trigger(this._element, EVENT_ACTIVATE, { relatedTarget: target });
   }
   _activateParents(target) {
     if (target.classList.contains(CLASS_NAME_DROPDOWN_ITEM)) {
@@ -4687,26 +4562,12 @@ class ScrollSpy extends BaseComponent {
       node.classList.remove(CLASS_NAME_ACTIVE$1);
     }
   }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = ScrollSpy.getOrCreateInstance(this, config);
-      if (typeof config !== "string") {
-        return;
-      }
-      if (data[config] === void 0 || config.startsWith("_") || config === "constructor") {
-        throw new TypeError(`No method named "${config}"`);
-      }
-      data[config]();
-    });
-  }
 }
 EventHandler.on(window, EVENT_LOAD_DATA_API$1, () => {
   for (const spy of SelectorEngine.find(SELECTOR_DATA_SPY)) {
     ScrollSpy.getOrCreateInstance(spy);
   }
 });
-defineJQueryPlugin(ScrollSpy);
 const NAME$1 = "tab";
 const DATA_KEY$1 = "bs.tab";
 const EVENT_KEY$1 = `.${DATA_KEY$1}`;
@@ -4733,9 +4594,9 @@ const NOT_SELECTOR_DROPDOWN_TOGGLE = `:not(${SELECTOR_DROPDOWN_TOGGLE})`;
 const SELECTOR_TAB_PANEL = '.list-group, .nav, [role="tablist"]';
 const SELECTOR_OUTER = ".nav-item, .list-group-item";
 const SELECTOR_INNER = `.nav-link${NOT_SELECTOR_DROPDOWN_TOGGLE}, .list-group-item${NOT_SELECTOR_DROPDOWN_TOGGLE}, [role="tab"]${NOT_SELECTOR_DROPDOWN_TOGGLE}`;
-const SELECTOR_DATA_TOGGLE = '[data-bs-toggle="tab"], [data-bs-toggle="pill"], [data-bs-toggle="list"]';
+const SELECTOR_DATA_TOGGLE = '[data-bs-toggle="tab"], [data-bs-toggle="pill"], [data-bs-toggle="list"], [data-tblr-toggle="tab"], [data-tblr-toggle="pill"], [data-tblr-toggle="list"]';
 const SELECTOR_INNER_ELEM = `${SELECTOR_INNER}, ${SELECTOR_DATA_TOGGLE}`;
-const SELECTOR_DATA_TOGGLE_ACTIVE = `.${CLASS_NAME_ACTIVE}[data-bs-toggle="tab"], .${CLASS_NAME_ACTIVE}[data-bs-toggle="pill"], .${CLASS_NAME_ACTIVE}[data-bs-toggle="list"]`;
+const SELECTOR_DATA_TOGGLE_ACTIVE = `.${CLASS_NAME_ACTIVE}[data-bs-toggle="tab"], .${CLASS_NAME_ACTIVE}[data-bs-toggle="pill"], .${CLASS_NAME_ACTIVE}[data-bs-toggle="list"], .${CLASS_NAME_ACTIVE}[data-tblr-toggle="tab"], .${CLASS_NAME_ACTIVE}[data-tblr-toggle="pill"], .${CLASS_NAME_ACTIVE}[data-tblr-toggle="list"]`;
 class Tab extends BaseComponent {
   constructor(element) {
     super(element);
@@ -4746,30 +4607,23 @@ class Tab extends BaseComponent {
     this._setInitialAttributes(this._parent, this._getChildren());
     EventHandler.on(this._element, EVENT_KEYDOWN, (event) => this._keydown(event));
   }
-  // Getters
   static get NAME() {
     return NAME$1;
   }
-  // Public
   show() {
     const innerElem = this._element;
     if (this._elemIsActive(innerElem)) {
       return;
     }
     const active = this._getActiveElem();
-    const hideEvent = active ? EventHandler.trigger(active, EVENT_HIDE$1, {
-      relatedTarget: innerElem
-    }) : null;
-    const showEvent = EventHandler.trigger(innerElem, EVENT_SHOW$1, {
-      relatedTarget: active
-    });
-    if (showEvent.defaultPrevented || hideEvent && hideEvent.defaultPrevented) {
+    const hideEvent = active ? EventHandler.trigger(active, EVENT_HIDE$1, { relatedTarget: innerElem }) : null;
+    const showEvent = EventHandler.trigger(innerElem, EVENT_SHOW$1, { relatedTarget: active });
+    if ((showEvent == null ? void 0 : showEvent.defaultPrevented) || (hideEvent == null ? void 0 : hideEvent.defaultPrevented)) {
       return;
     }
     this._deactivate(active, innerElem);
     this._activate(innerElem, active);
   }
-  // Private
   _activate(element, relatedElem) {
     if (!element) {
       return;
@@ -4782,7 +4636,7 @@ class Tab extends BaseComponent {
         return;
       }
       element.removeAttribute("tabindex");
-      element.setAttribute("aria-selected", true);
+      element.setAttribute("aria-selected", "true");
       this._toggleDropDown(element, true);
       EventHandler.trigger(element, EVENT_SHOWN$1, {
         relatedTarget: relatedElem
@@ -4802,12 +4656,10 @@ class Tab extends BaseComponent {
         element.classList.remove(CLASS_NAME_SHOW$1);
         return;
       }
-      element.setAttribute("aria-selected", false);
+      element.setAttribute("aria-selected", "false");
       element.setAttribute("tabindex", "-1");
       this._toggleDropDown(element, false);
-      EventHandler.trigger(element, EVENT_HIDDEN$1, {
-        relatedTarget: relatedElem
-      });
+      EventHandler.trigger(element, EVENT_HIDDEN$1, { relatedTarget: relatedElem });
     };
     this._queueCallback(complete, element, element.classList.contains(CLASS_NAME_FADE$1));
   }
@@ -4826,9 +4678,7 @@ class Tab extends BaseComponent {
       nextActiveElement = getNextActiveElement(children, event.target, isNext, true);
     }
     if (nextActiveElement) {
-      nextActiveElement.focus({
-        preventScroll: true
-      });
+      nextActiveElement.focus({ preventScroll: true });
       Tab.getOrCreateInstance(nextActiveElement).show();
     }
   }
@@ -4848,7 +4698,7 @@ class Tab extends BaseComponent {
     child = this._getInnerElement(child);
     const isActive = this._elemIsActive(child);
     const outerElem = this._getOuterElement(child);
-    child.setAttribute("aria-selected", isActive);
+    child.setAttribute("aria-selected", String(isActive));
     if (outerElem !== child) {
       this._setAttributeIfNotExists(outerElem, "role", "presentation");
     }
@@ -4874,14 +4724,14 @@ class Tab extends BaseComponent {
       return;
     }
     const toggle = (selector, className) => {
-      const element2 = SelectorEngine.findOne(selector, outerElem);
-      if (element2) {
-        element2.classList.toggle(className, open);
+      const el = SelectorEngine.findOne(selector, outerElem);
+      if (el) {
+        el.classList.toggle(className, open);
       }
     };
     toggle(SELECTOR_DROPDOWN_TOGGLE, CLASS_NAME_ACTIVE);
     toggle(SELECTOR_DROPDOWN_MENU, CLASS_NAME_SHOW$1);
-    outerElem.setAttribute("aria-expanded", open);
+    outerElem.setAttribute("aria-expanded", String(open));
   }
   _setAttributeIfNotExists(element, attribute, value) {
     if (!element.hasAttribute(attribute)) {
@@ -4891,26 +4741,11 @@ class Tab extends BaseComponent {
   _elemIsActive(elem) {
     return elem.classList.contains(CLASS_NAME_ACTIVE);
   }
-  // Try to get the inner element (usually the .nav-link)
   _getInnerElement(elem) {
     return elem.matches(SELECTOR_INNER_ELEM) ? elem : SelectorEngine.findOne(SELECTOR_INNER_ELEM, elem);
   }
-  // Try to get the outer element (usually the .nav-item)
   _getOuterElement(elem) {
     return elem.closest(SELECTOR_OUTER) || elem;
-  }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = Tab.getOrCreateInstance(this);
-      if (typeof config !== "string") {
-        return;
-      }
-      if (data[config] === void 0 || config.startsWith("_") || config === "constructor") {
-        throw new TypeError(`No method named "${config}"`);
-      }
-      data[config]();
-    });
   }
 }
 EventHandler.on(document, EVENT_CLICK_DATA_API, SELECTOR_DATA_TOGGLE, function(event) {
@@ -4927,7 +4762,6 @@ EventHandler.on(window, EVENT_LOAD_DATA_API, () => {
     Tab.getOrCreateInstance(element);
   }
 });
-defineJQueryPlugin(Tab);
 const NAME = "toast";
 const DATA_KEY = "bs.toast";
 const EVENT_KEY = `.${DATA_KEY}`;
@@ -4961,7 +4795,6 @@ class Toast extends BaseComponent {
     this._hasKeyboardInteraction = false;
     this._setListeners();
   }
-  // Getters
   static get Default() {
     return Default;
   }
@@ -4971,10 +4804,9 @@ class Toast extends BaseComponent {
   static get NAME() {
     return NAME;
   }
-  // Public
   show() {
     const showEvent = EventHandler.trigger(this._element, EVENT_SHOW);
-    if (showEvent.defaultPrevented) {
+    if (showEvent == null ? void 0 : showEvent.defaultPrevented) {
       return;
     }
     this._clearTimeout();
@@ -4996,7 +4828,7 @@ class Toast extends BaseComponent {
       return;
     }
     const hideEvent = EventHandler.trigger(this._element, EVENT_HIDE);
-    if (hideEvent.defaultPrevented) {
+    if (hideEvent == null ? void 0 : hideEvent.defaultPrevented) {
       return;
     }
     const complete = () => {
@@ -5017,7 +4849,6 @@ class Toast extends BaseComponent {
   isShown() {
     return this._element.classList.contains(CLASS_NAME_SHOW);
   }
-  // Private
   _maybeScheduleHide() {
     if (!this._config.autohide) {
       return;
@@ -5062,23 +4893,9 @@ class Toast extends BaseComponent {
     clearTimeout(this._timeout);
     this._timeout = null;
   }
-  // Static
-  static jQueryInterface(config) {
-    return this.each(function() {
-      const data = Toast.getOrCreateInstance(this, config);
-      if (typeof config === "string") {
-        if (typeof data[config] === "undefined") {
-          throw new TypeError(`No method named "${config}"`);
-        }
-        data[config](this);
-      }
-    });
-  }
 }
 enableDismissTrigger(Toast);
-defineJQueryPlugin(Toast);
-const bootstrap_esm = /* @__PURE__ */ Object.freeze({
-  __proto__: null,
+const bootstrap = {
   Alert,
   Button,
   Carousel,
@@ -5091,7 +4908,7 @@ const bootstrap_esm = /* @__PURE__ */ Object.freeze({
   Tab,
   Toast,
   Tooltip
-});
+};
 const dropdownTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
 dropdownTriggerList.map(function(dropdownTriggerEl) {
   const options = {
@@ -5194,7 +5011,7 @@ export {
   Tab,
   Toast,
   Tooltip,
-  bootstrap_esm as bootstrap,
+  bootstrap,
   tabler
 };
 //# sourceMappingURL=tabler.esm.js.map

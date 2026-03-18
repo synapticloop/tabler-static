@@ -99,6 +99,8 @@ export default class SignaturePad extends SignatureEventTarget {
     private _handleTouchStart;
     private _handleTouchMove;
     private _handleTouchEnd;
+    private _handlePointerCancel;
+    private _handleTouchCancel;
     private _getPointerId;
     private _allowPointerId;
     private _handlePointerDown;

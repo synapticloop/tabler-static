@@ -125,6 +125,8 @@ export default class SignaturePad extends SignatureEventTarget {
     this._handlePointerDown = this._handlePointerDown.bind(this);
     this._handlePointerMove = this._handlePointerMove.bind(this);
     this._handlePointerUp = this._handlePointerUp.bind(this);
+    this._handlePointerCancel = this._handlePointerCancel.bind(this);
+    this._handleTouchCancel = this._handleTouchCancel.bind(this);
 
     this._ctx = canvas.getContext(
       '2d',
@@ -229,6 +231,9 @@ export default class SignaturePad extends SignatureEventTarget {
       }
     ).msTouchAction = 'none';
     this.canvas.style.userSelect = 'none';
+    // Safari does not support userSelect property without a prefix even as of iOS 26
+    // https://caniuse.com/?search=user-select
+    this.canvas.style.webkitUserSelect = 'none';
 
     const isIOS =
       /Macintosh/.test(navigator.userAgent) && 'ontouchstart' in document;
@@ -257,6 +262,7 @@ export default class SignaturePad extends SignatureEventTarget {
       }
     ).msTouchAction = 'auto';
     this.canvas.style.userSelect = 'auto';
+    this.canvas.style.webkitUserSelect = 'auto';
 
     this.canvas.removeEventListener('pointerdown', this._handlePointerDown);
     this.canvas.removeEventListener('mousedown', this._handleMouseDown);
@@ -285,12 +291,14 @@ export default class SignaturePad extends SignatureEventTarget {
     const { removeEventListener } = this._getListenerFunctions();
     removeEventListener('pointermove', this._handlePointerMove);
     removeEventListener('pointerup', this._handlePointerUp);
+    removeEventListener('pointercancel', this._handlePointerCancel);
 
     removeEventListener('mousemove', this._handleMouseMove);
     removeEventListener('mouseup', this._handleMouseUp);
 
     removeEventListener('touchmove', this._handleTouchMove);
     removeEventListener('touchend', this._handleTouchEnd);
+    removeEventListener('touchcancel', this._handleTouchCancel);
   }
 
   public isEmpty(): boolean {
@@ -417,6 +425,23 @@ export default class SignaturePad extends SignatureEventTarget {
     this._strokeEnd(this._touchEventToSignatureEvent(event));
   }
 
+  private _handlePointerCancel(event: PointerEvent): void {
+    if (!this._allowPointerId(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    this._strokeEnd(this._pointerEventToSignatureEvent(event), false);
+  }
+
+  private _handleTouchCancel(event: TouchEvent): void {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+
+    this._strokeEnd(this._touchEventToSignatureEvent(event), false);
+  }
+
   private _getPointerId(event: PointerEvent) {
     // @ts-expect-error persistentDeviceId is not available yet but we want to use it when it is available
     return event.persistentDeviceId || event.pointerId;
@@ -511,12 +536,16 @@ export default class SignaturePad extends SignatureEventTarget {
           passive: false,
         });
         addEventListener('touchend', this._handleTouchEnd, { passive: false });
+        addEventListener('touchcancel', this._handleTouchCancel, { passive: false });
         break;
       case 'pointerdown':
         addEventListener('pointermove', this._handlePointerMove, {
           passive: false,
         });
         addEventListener('pointerup', this._handlePointerUp, {
+          passive: false,
+        });
+        addEventListener('pointercancel', this._handlePointerCancel, {
           passive: false,
         });
         break;

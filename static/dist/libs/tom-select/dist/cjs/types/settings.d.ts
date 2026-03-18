@@ -1,4 +1,4 @@
-import { TomCreateFilter, TomCreate, TomLoadCallback, TomTemplates, TomOption } from './index.ts';
+import { TomCreateOptgroup, TomCreateFilter, TomCreate, TomLoadCallback, TomTemplates, TomOption } from './index.ts';
 import { TPluginItem, TPluginHash } from '../contrib/microplugin.ts';
 import { type Sort as SifterSort, type SortFn as SifterSortFn } from '@orchidjs/sifter';
 export type TomSettings = {
@@ -16,7 +16,7 @@ export type TomSettings = {
     highlight: boolean;
     openOnFocus: boolean;
     shouldOpen: boolean;
-    maxOptions: number;
+    maxOptions: null | number;
     maxItems: null | number;
     hideSelected: boolean;
     duplicates: boolean;
@@ -25,6 +25,7 @@ export type TomSettings = {
     preload: boolean | string;
     allowEmptyOption: boolean;
     closeAfterSelect: boolean;
+    clearAfterSelect: boolean;
     refreshThrottle: number;
     loadThrottle: number;
     loadingClass: string;
@@ -36,6 +37,7 @@ export type TomSettings = {
     optgroupLabelField: string;
     optgroupValueField: string;
     lockOptgroupOrder: boolean;
+    optionGroupRegister: TomCreateOptgroup;
     sortField: string | SifterSort[] | SifterSortFn;
     searchField: string[];
     searchConjunction: string;
@@ -48,7 +50,7 @@ export type TomSettings = {
     itemClass: string;
     optionClass: string;
     dropdownParent: string;
-    controlInput: string | HTMLInputElement;
+    controlInput: null | string | HTMLInputElement;
     copyClassesToDropdown: boolean;
     placeholder: string;
     hidePlaceholder: boolean;

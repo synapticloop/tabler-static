@@ -1,5 +1,5 @@
 /*!
- * Signature Pad v5.1.1 | https://github.com/szimek/signature_pad
+ * Signature Pad v5.1.3 | https://github.com/szimek/signature_pad
  * (c) 2025 Szymon Nowak | Released under the MIT license
  */
 
@@ -193,6 +193,8 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
     this._handlePointerDown = this._handlePointerDown.bind(this);
     this._handlePointerMove = this._handlePointerMove.bind(this);
     this._handlePointerUp = this._handlePointerUp.bind(this);
+    this._handlePointerCancel = this._handlePointerCancel.bind(this);
+    this._handleTouchCancel = this._handleTouchCancel.bind(this);
     this._ctx = canvas.getContext(
       "2d",
       this.canvasContextOptions
@@ -291,6 +293,7 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
     this.canvas.style.touchAction = "none";
     this.canvas.style.msTouchAction = "none";
     this.canvas.style.userSelect = "none";
+    this.canvas.style.webkitUserSelect = "none";
     const isIOS = /Macintosh/.test(navigator.userAgent) && "ontouchstart" in document;
     if (window.PointerEvent && !isIOS) {
       this._handlePointerEvents();
@@ -305,6 +308,7 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
     this.canvas.style.touchAction = "auto";
     this.canvas.style.msTouchAction = "auto";
     this.canvas.style.userSelect = "auto";
+    this.canvas.style.webkitUserSelect = "auto";
     this.canvas.removeEventListener("pointerdown", this._handlePointerDown);
     this.canvas.removeEventListener("mousedown", this._handleMouseDown);
     this.canvas.removeEventListener("touchstart", this._handleTouchStart);
@@ -325,10 +329,12 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
     const { removeEventListener } = this._getListenerFunctions();
     removeEventListener("pointermove", this._handlePointerMove);
     removeEventListener("pointerup", this._handlePointerUp);
+    removeEventListener("pointercancel", this._handlePointerCancel);
     removeEventListener("mousemove", this._handleMouseMove);
     removeEventListener("mouseup", this._handleMouseUp);
     removeEventListener("touchmove", this._handleTouchMove);
     removeEventListener("touchend", this._handleTouchEnd);
+    removeEventListener("touchcancel", this._handleTouchCancel);
   }
   isEmpty() {
     return this._isEmpty;
@@ -423,6 +429,19 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
     }
     this._strokeEnd(this._touchEventToSignatureEvent(event));
   }
+  _handlePointerCancel(event) {
+    if (!this._allowPointerId(event)) {
+      return;
+    }
+    event.preventDefault();
+    this._strokeEnd(this._pointerEventToSignatureEvent(event), false);
+  }
+  _handleTouchCancel(event) {
+    if (event.cancelable) {
+      event.preventDefault();
+    }
+    this._strokeEnd(this._touchEventToSignatureEvent(event), false);
+  }
   _getPointerId(event) {
     return event.persistentDeviceId || event.pointerId;
   }
@@ -489,12 +508,16 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
           passive: false
         });
         addEventListener("touchend", this._handleTouchEnd, { passive: false });
+        addEventListener("touchcancel", this._handleTouchCancel, { passive: false });
         break;
       case "pointerdown":
         addEventListener("pointermove", this._handlePointerMove, {
           passive: false
         });
         addEventListener("pointerup", this._handlePointerUp, {
+          passive: false
+        });
+        addEventListener("pointercancel", this._handlePointerCancel, {
           passive: false
         });
         break;

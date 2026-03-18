@@ -106,7 +106,7 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
         if ((0, vanilla_ts_1.isHtmlString)(settings.controlInput)) {
             control_input = (0, vanilla_ts_1.getDom)(settings.controlInput);
             // set attributes
-            var attrs = ['autocorrect', 'autocapitalize', 'autocomplete', 'spellcheck'];
+            var attrs = ['autocorrect', 'autocapitalize', 'autocomplete', 'spellcheck', 'aria-label'];
             (0, utils_ts_1.iterate)(attrs, (attr) => {
                 if (input.getAttribute(attr)) {
                     (0, vanilla_ts_1.setAttr)(control_input, { [attr]: input.getAttribute(attr) });
@@ -169,6 +169,8 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
             (0, vanilla_ts_1.setAttr)(dropdown_content, { 'aria-labelledby': label_id });
         }
         wrapper.style.width = input.style.width;
+        wrapper.style.minWidth = input.style.minWidth;
+        wrapper.style.maxWidth = input.style.maxWidth;
         if (self.plugins.names.length) {
             const classes_plugins = 'plugin-' + self.plugins.names.join(' plugin-');
             (0, vanilla_ts_1.addClasses)([wrapper, dropdown], classes_plugins);
@@ -253,10 +255,19 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
                 self.positionDropdown();
             }
         };
+        const input_invalid = () => {
+            if (self.isValid) {
+                self.isValid = false;
+                self.isInvalid = true;
+                self.refreshState();
+            }
+        };
+        (0, utils_ts_1.addEvent)(input, 'invalid', input_invalid);
         (0, utils_ts_1.addEvent)(document, 'mousedown', doc_mousedown);
         (0, utils_ts_1.addEvent)(window, 'scroll', win_scroll, passive_event);
         (0, utils_ts_1.addEvent)(window, 'resize', win_scroll, passive_event);
         this._destroy = () => {
+            input.removeEventListener('invalid', input_invalid);
             document.removeEventListener('mousedown', doc_mousedown);
             window.removeEventListener('scroll', win_scroll);
             window.removeEventListener('resize', win_scroll);
@@ -275,14 +286,6 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
         settings.items = [];
         delete settings.optgroups;
         delete settings.options;
-        (0, utils_ts_1.addEvent)(input, 'invalid', () => {
-            if (self.isValid) {
-                self.isValid = false;
-                self.isInvalid = true;
-                self.refreshState();
-            }
-        });
-        self.updateOriginalInput();
         self.refreshItems();
         self.close(false);
         self.inputState();
@@ -393,7 +396,7 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
      */
     sync(get_settings = true) {
         const self = this;
-        const settings = get_settings ? (0, getSettings_ts_1.default)(self.input, { delimiter: self.settings.delimiter }) : self.settings;
+        const settings = get_settings ? (0, getSettings_ts_1.default)(self.input, { delimiter: self.settings.delimiter, allowEmptyOption: self.settings.allowEmptyOption }) : self.settings;
         self.setupOptions(settings.options, settings.optgroups);
         self.setValue(settings.items || [], true); // silent prevents recursion
         self.lastQuery = null; // so updated options will be displayed in dropdown
@@ -568,7 +571,7 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
                         // if select isFull, then the dropdown won't be open and [tab] will work normally
                         (0, utils_ts_1.preventDefault)(e);
                     }
-                    if (self.settings.create && self.createItem()) {
+                    else if (self.settings.create && self.createItem()) {
                         (0, utils_ts_1.preventDefault)(e);
                     }
                 }
@@ -692,6 +695,9 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
                 if (self.settings.closeAfterSelect) {
                     self.close();
                 }
+                else if (self.settings.clearAfterSelect) {
+                    self.setTextboxValue();
+                }
             });
         }
         else {
@@ -701,6 +707,9 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
                 self.addItem(value);
                 if (self.settings.closeAfterSelect) {
                     self.close();
+                }
+                else if (self.settings.clearAfterSelect) {
+                    self.setTextboxValue();
                 }
                 if (!self.settings.hideSelected && evt.type && /click/.test(evt.type)) {
                     self.setActiveOption(option);
@@ -1108,6 +1117,11 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
         // perform search
         if (query !== self.lastQuery) {
             self.lastQuery = query;
+            // temp fix for https://github.com/orchidjs/tom-select/issues/987
+            // UI crashed when more than 30 same chars in a row, prevent search and return empt result
+            if (/(.)\1{15,}/.test(query)) {
+                query = '';
+            }
             result = self.sifter.search(query, Object.assign(options, { score: calculateScore }));
             self.currentResults = result;
         }
@@ -1118,7 +1132,7 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
         if (self.settings.hideSelected) {
             result.items = result.items.filter((item) => {
                 let hashed = (0, utils_ts_1.hash_key)(item.id);
-                return !(hashed && self.items.indexOf(hashed) !== -1);
+                return !(hashed !== null && self.items.indexOf(hashed) !== -1);
             });
         }
         return result;
@@ -1190,6 +1204,13 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
                 optgroup = optgroups[j];
                 let order = option.$order;
                 let self_optgroup = self.optgroups[optgroup];
+                if (self_optgroup === undefined && typeof self.settings.optionGroupRegister === 'function') {
+                    var regGroup;
+                    if (regGroup = self.settings.optionGroupRegister.apply(self, [optgroup])) {
+                        self.registerOptionGroup(regGroup);
+                    }
+                }
+                self_optgroup = self.optgroups[optgroup];
                 if (self_optgroup === undefined) {
                     optgroup = '';
                 }
@@ -1623,6 +1644,10 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
                         self.setActiveOption(next);
                     }
                 }
+                //remove input value when enabled
+                if (self.settings.clearAfterSelect) {
+                    self.setTextboxValue();
+                }
                 // refreshOptions after setActiveOption(),
                 // otherwise setActiveOption() will be called by refreshOptions() with the wrong value
                 if (!self.isPending && !self.settings.closeAfterSelect) {
@@ -1700,6 +1725,12 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
         var output;
         input = input || self.inputValue();
         if (!self.canCreate(input)) {
+            const hash = (0, utils_ts_1.hash_key)(input);
+            if (hash) {
+                if (this.options[input]) {
+                    self.addItem(input);
+                }
+            }
             callback();
             return false;
         }
@@ -1998,7 +2029,7 @@ class TomSelect extends (0, microplugin_ts_1.default)(microevent_ts_1.default) {
     shouldDelete(items, evt) {
         const values = items.map(item => item.dataset.value);
         // allow the callback to abort
-        if (!values.length || (typeof this.settings.onDelete === 'function' && this.settings.onDelete(values, evt) === false)) {
+        if (!values.length || (typeof this.settings.onDelete === 'function' && this.settings.onDelete.call(this, values, evt) === false)) {
             return false;
         }
         return true;
