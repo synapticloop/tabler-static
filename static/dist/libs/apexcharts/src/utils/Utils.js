@@ -1,67 +1,43 @@
+// @ts-check
 /*
  ** Generic functions which are not dependent on ApexCharts
  */
 
-class Utils {
-  static bind(fn, me) {
-    return function () {
-      return fn.apply(me, arguments)
-    }
-  }
+import { Environment } from './Environment.js'
+import { BrowserAPIs } from '../ssr/BrowserAPIs.js'
 
+class Utils {
+  /**
+   * @param {*} item
+   */
   static isObject(item) {
-    return (
-      item && typeof item === 'object' && !Array.isArray(item) && item != null
-    )
+    return item && typeof item === 'object' && !Array.isArray(item)
   }
 
   // Type checking that works across different window objects
+  /**
+   * @param {string} type
+   * @param {string} val
+   */
   static is(type, val) {
     return Object.prototype.toString.call(val) === '[object ' + type + ']'
   }
 
   static isSafari() {
-    return /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
-  }
-
-  static listToArray(list) {
-    let i,
-      array = []
-    for (i = 0; i < list.length; i++) {
-      array[i] = list[i]
-    }
-    return array
+    return (
+      Environment.isBrowser() &&
+      /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+    )
   }
 
   // to extend defaults with user options
   // credit: http://stackoverflow.com/questions/27936772/deep-object-merging-in-es6-es7#answer-34749873
+  /**
+   * @param {any} target
+   * @param {any} source
+   */
   static extend(target, source) {
-    if (typeof Object.assign !== 'function') {
-      ;(function () {
-        Object.assign = function (target) {
-          'use strict'
-          // We must check against these specific cases.
-          if (target === undefined || target === null) {
-            throw new TypeError('Cannot convert undefined or null to object')
-          }
-
-          let output = Object(target)
-          for (let index = 1; index < arguments.length; index++) {
-            let source = arguments[index]
-            if (source !== undefined && source !== null) {
-              for (let nextKey in source) {
-                if (source.hasOwnProperty(nextKey)) {
-                  output[nextKey] = source[nextKey]
-                }
-              }
-            }
-          }
-          return output
-        }
-      })()
-    }
-
-    let output = Object.assign({}, target)
+    const output = Object.assign({}, target)
     if (this.isObject(target) && this.isObject(source)) {
       Object.keys(source).forEach((key) => {
         if (this.isObject(source[key])) {
@@ -82,9 +58,17 @@ class Utils {
     return output
   }
 
+  /**
+   * @param {any[]} arrToExtend
+   * @param {any} resultArr
+   */
   static extendArray(arrToExtend, resultArr) {
-    let extendedArr = []
-    arrToExtend.map((item) => {
+    /** @type {any[]} */
+    const extendedArr = []
+    /**
+     * @param {any} item
+     */
+    arrToExtend.map((/** @type {any} */ item) => {
       extendedArr.push(Utils.extend(resultArr, item))
     })
     arrToExtend = extendedArr
@@ -92,6 +76,9 @@ class Utils {
   }
 
   // If month counter exceeds 12, it starts again from 1
+  /**
+   * @param {number} month
+   */
   static monthMod(month) {
     return month % 12
   }
@@ -99,7 +86,7 @@ class Utils {
   /**
    * clone object with optional shallow copy for performance
    * @param {*} source - Source object to clone
-   * @param {WeakMap} visited - Circular reference tracker
+   * @param {WeakMap<any, any>} visited - Circular reference tracker
    * @param {boolean} shallow - If true, performs shallow copy (default: false)
    * @returns {*} Cloned object
    */
@@ -112,6 +99,7 @@ class Utils {
       return visited.get(source)
     }
 
+    /** @type {any} */
     let cloneResult
 
     if (Array.isArray(source)) {
@@ -132,9 +120,13 @@ class Utils {
       } else {
         cloneResult = {}
         visited.set(source, cloneResult)
-        for (let prop in source) {
-          if (source.hasOwnProperty(prop)) {
-            cloneResult[prop] = this.clone(source[prop], visited, false)
+        for (const prop in source) {
+          if (Object.prototype.hasOwnProperty.call(source, prop)) {
+            cloneResult[prop] = this.clone(
+              /** @type {Record<string,any>} */ (source)[prop],
+              visited,
+              false,
+            )
           }
         }
       }
@@ -177,30 +169,50 @@ class Utils {
 
     if (keys1.length !== keys2.length) return false
 
-    for (let key of keys1) {
-      if (obj1[key] !== obj2[key]) return false
+    for (const key of keys1) {
+      if (
+        /** @type {Record<string,any>} */ (obj1)[key] !==
+        /** @type {Record<string,any>} */ (obj2)[key]
+      )
+        return false
     }
 
     return true
   }
 
+  /**
+   * @param {number} x
+   */
   static log10(x) {
     return Math.log(x) / Math.LN10
   }
 
+  /**
+   * @param {number} x
+   */
   static roundToBase10(x) {
     return Math.pow(10, Math.floor(Math.log10(x)))
   }
 
+  /**
+   * @param {number} x
+   * @param {number} base
+   */
   static roundToBase(x, base) {
     return Math.pow(base, Math.floor(Math.log(x) / Math.log(base)))
   }
 
+  /**
+   * @param {any} val
+   */
   static parseNumber(val) {
     if (typeof val === 'number' || val === null) return val
     return parseFloat(val)
   }
 
+  /**
+   * @param {number} num
+   */
   static stripNumber(num, precision = 2) {
     return Number.isInteger(num) ? num : parseFloat(num.toPrecision(precision))
   }
@@ -209,6 +221,9 @@ class Utils {
     return (Math.random() + 1).toString(36).substring(4)
   }
 
+  /**
+   * @param {number} num
+   */
   static noExponents(num) {
     // Check if the number contains 'e' (exponential notation)
     if (num.toString().includes('e')) {
@@ -217,6 +232,9 @@ class Utils {
     return num // Return as-is if no exponential notation
   }
 
+  /**
+   * @param {any} element
+   */
   static elementExists(element) {
     if (!element || !element.isConnected) {
       return false
@@ -226,6 +244,7 @@ class Utils {
 
   /**
    * detects if an element is inside a Shadow DOM
+   * @param {any} el
    */
   static isInShadowDOM(el) {
     if (!el || !el.getRootNode) {
@@ -240,6 +259,7 @@ class Utils {
 
   /**
    * gets the shadow root host element
+   * @param {any} el
    */
   static getShadowRootHost(el) {
     if (!Utils.isInShadowDOM(el)) {
@@ -250,8 +270,16 @@ class Utils {
     return rootNode.host || null
   }
 
+  /**
+   * @param {any} el
+   */
   static getDimensions(el) {
     if (!el) return [0, 0]
+
+    // SSR: use provided dimensions or defaults
+    if (Environment.isSSR()) {
+      return [el._ssrWidth || 400, el._ssrHeight || 300]
+    }
 
     // check if in shadow DOM
     const rootNode = el.getRootNode && el.getRootNode()
@@ -283,7 +311,10 @@ class Utils {
 
     return [elementWidth, elementHeight]
   }
-
+  /**
+   * @returns {any}
+   * @param {any} element
+   */
   static getBoundingClientRect(element) {
     if (!element) {
       return {
@@ -296,6 +327,11 @@ class Utils {
         x: 0,
         y: 0,
       }
+    }
+
+    // SSR: use abstraction layer
+    if (Environment.isSSR()) {
+      return BrowserAPIs.getBoundingClientRect(element)
     }
 
     const rect = element.getBoundingClientRect()
@@ -311,7 +347,14 @@ class Utils {
     }
   }
 
+  /**
+   * @param {any[]} arr
+   */
   static getLargestStringFromArr(arr) {
+    /**
+     * @param {string} a
+     * @param {string} b
+     */
     return arr.reduce((a, b) => {
       if (Array.isArray(b)) {
         b = b.reduce((aa, bb) => (aa.length > bb.length ? aa : bb))
@@ -326,8 +369,10 @@ class Utils {
       hex = '#999999'
     }
 
-    let h = hex.replace('#', '')
-    h = h.match(new RegExp('(.{' + h.length / 3 + '})', 'g'))
+    const hexStr = hex.replace('#', '')
+    /** @type {any[]} */
+    const h =
+      hexStr.match(new RegExp('(.{' + hexStr.length / 3 + '})', 'g')) || []
 
     for (let i = 0; i < h.length; i++) {
       h[i] = parseInt(h[i].length === 1 ? h[i] + h[i] : h[i], 16)
@@ -338,13 +383,19 @@ class Utils {
     return 'rgba(' + h.join(',') + ')'
   }
 
+  /**
+   * @param {string} rgba
+   */
   static getOpacityFromRGBA(rgba) {
     return parseFloat(rgba.replace(/^.*,(.+)\)/, '$1'))
   }
 
+  /**
+   * @param {any} rgb
+   */
   static rgb2hex(rgb) {
     rgb = rgb.match(
-      /^rgba?[\s+]?\([\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?/i
+      /^rgba?[\s+]?\([\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?,[\s+]?(\d+)[\s+]?/i,
     )
     return rgb && rgb.length === 4
       ? '#' +
@@ -354,8 +405,12 @@ class Utils {
       : ''
   }
 
+  /**
+   * @param {number} percent
+   * @param {string} color
+   */
   shadeRGBColor(percent, color) {
-    let f = color.split(','),
+    const f = color.split(','),
       t = percent < 0 ? 0 : 255,
       p = percent < 0 ? percent * -1 : percent,
       R = parseInt(f[0].slice(4), 10),
@@ -372,8 +427,12 @@ class Utils {
     )
   }
 
+  /**
+   * @param {number} percent
+   * @param {string} color
+   */
   shadeHexColor(percent, color) {
-    let f = parseInt(color.slice(1), 16),
+    const f = parseInt(color.slice(1), 16),
       t = percent < 0 ? 0 : 255,
       p = percent < 0 ? percent * -1 : percent,
       R = f >> 16,
@@ -394,6 +453,10 @@ class Utils {
 
   // beautiful color shading blending code
   // http://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
+  /**
+   * @param {number} p
+   * @param {string} color
+   */
   shadeColor(p, color) {
     if (Utils.isColorHex(color)) {
       return this.shadeHexColor(p, color)
@@ -402,10 +465,16 @@ class Utils {
     }
   }
 
+  /**
+   * @param {string} color
+   */
   static isColorHex(color) {
     return /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)|(^#[0-9A-F]{8}$)/i.test(color)
   }
 
+  /**
+   * @param {string} color
+   */
   static isCSSVariable(color) {
     if (typeof color !== 'string') return false
 
@@ -413,8 +482,14 @@ class Utils {
     return value.startsWith('var(') && value.endsWith(')')
   }
 
+  /**
+   * @param {string} color
+   */
   static getThemeColor(color) {
     if (!Utils.isCSSVariable(color)) return color
+
+    // CSS variable resolution requires a live DOM — not possible in SSR
+    if (Environment.isSSR()) return color
 
     const tempElem = document.createElement('div')
     tempElem.style.cssText = 'position:fixed; left: -9999px; visibility:hidden;'
@@ -433,11 +508,28 @@ class Utils {
     return computedColor
   }
 
+  /**
+   * @param {string} color
+   * @param {number} opacity
+   */
+  static applyOpacityToColor(color, opacity) {
+    const value = Number(opacity)
+    if (!Number.isFinite(value)) return color
+    if (value <= 0) return 'transparent'
+    if (value >= 1) return color
+    const percent = Math.round(value * 100)
+    return `color-mix(in srgb, ${color} ${percent}%, transparent)`
+  }
+
+  /**
+   * @param {number} size
+   * @param {number} dataPointsLen
+   */
   static getPolygonPos(size, dataPointsLen) {
-    let dotsArray = []
-    let angle = (Math.PI * 2) / dataPointsLen
+    const dotsArray = []
+    const angle = (Math.PI * 2) / dataPointsLen
     for (let i = 0; i < dataPointsLen; i++) {
-      let curPos = {}
+      const curPos = {}
       curPos.x = size * Math.sin(i * angle)
       curPos.y = -size * Math.cos(i * angle)
       dotsArray.push(curPos)
@@ -445,8 +537,14 @@ class Utils {
     return dotsArray
   }
 
+  /**
+   * @param {number} centerX
+   * @param {number} centerY
+   * @param {number} radius
+   * @param {number} angleInDegrees
+   */
   static polarToCartesian(centerX, centerY, radius, angleInDegrees) {
-    let angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0
+    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0
 
     return {
       x: centerX + radius * Math.cos(angleInRadians),
@@ -454,19 +552,27 @@ class Utils {
     }
   }
 
+  /**
+   * @param {string} str
+   */
   static escapeString(str, escapeWith = 'x') {
     let newStr = str.toString().slice()
-    newStr = newStr.replace(
-      /[` ~!@#$%^&*()|+\=?;:'",.<>{}[\]\\/]/gi,
-      escapeWith
-    )
+    newStr = newStr.replace(/[` ~!@#$%^&*()|+=?;:'",.<>{}[\]\\/]/gi, escapeWith)
     return newStr
   }
 
+  /**
+   * @param {number} val
+   */
   static negToZero(val) {
     return val < 0 ? 0 : val
   }
 
+  /**
+   * @param {any[]} arr
+   * @param {number} old_index
+   * @param {number} new_index
+   */
   static moveIndexInArray(arr, old_index, new_index) {
     if (new_index >= arr.length) {
       let k = new_index - arr.length + 1
@@ -478,48 +584,71 @@ class Utils {
     return arr
   }
 
+  /**
+   * @param {string} s
+   */
   static extractNumber(s) {
     return parseFloat(s.replace(/[^\d.]*/g, ''))
   }
 
+  /**
+   * @param {any} el
+   * @param {string} cls
+   */
   static findAncestor(el, cls) {
     while ((el = el.parentElement) && !el.classList.contains(cls));
     return el
   }
 
+  /**
+   * @param {any} el
+   * @param {Record<string, any>} styles
+   */
   static setELstyles(el, styles) {
-    for (let key in styles) {
-      if (styles.hasOwnProperty(key)) {
+    for (const key in styles) {
+      if (Object.prototype.hasOwnProperty.call(styles, key)) {
         el.style.key = styles[key]
       }
     }
   }
   // prevents JS prevision errors when adding
+  /**
+   * @param {number} a
+   * @param {number} b
+   */
   static preciseAddition(a, b) {
-    let aDecimals = (String(a).split('.')[1] || '').length
-    let bDecimals = (String(b).split('.')[1] || '').length
+    const aDecimals = (String(a).split('.')[1] || '').length
+    const bDecimals = (String(b).split('.')[1] || '').length
 
-    let factor = Math.pow(10, Math.max(aDecimals, bDecimals))
+    const factor = Math.pow(10, Math.max(aDecimals, bDecimals))
 
     return (Math.round(a * factor) + Math.round(b * factor)) / factor
   }
 
+  /**
+   * @param {any} value
+   */
   static isNumber(value) {
     return (
       !isNaN(value) &&
-      parseFloat(Number(value)) === value &&
+      parseFloat(String(Number(value))) === value &&
       !isNaN(parseInt(value, 10))
     )
   }
 
+  /**
+   * @param {number} n
+   */
   static isFloat(n) {
     return Number(n) === n && n % 1 !== 0
   }
 
   static isMsEdge() {
-    let ua = window.navigator.userAgent
+    if (Environment.isSSR()) return false
 
-    let edge = ua.indexOf('Edge/')
+    const ua = window.navigator.userAgent
+
+    const edge = ua.indexOf('Edge/')
     if (edge > 0) {
       // Edge (IE 12+) => return version number
       return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10)
@@ -531,6 +660,10 @@ class Utils {
   //
   // Find the Greatest Common Divisor of two numbers
   //
+  /**
+   * @param {number} a
+   * @param {number} b
+   */
   static getGCD(a, b, p = 7) {
     let factor = Math.pow(10, p - Math.floor(Math.log10(Math.max(a, b))))
     if (factor > 1) {
@@ -541,13 +674,16 @@ class Utils {
     }
 
     while (b) {
-      let t = b
+      const t = b
       b = a % b
       a = t
     }
     return a / factor
   }
 
+  /**
+   * @param {number} n
+   */
   static getPrimeFactors(n) {
     const factors = []
     let divisor = 2
@@ -563,8 +699,12 @@ class Utils {
     return factors
   }
 
+  /**
+   * @param {number} a
+   * @param {number} b
+   */
   static mod(a, b, p = 7) {
-    let big = Math.pow(10, p - Math.floor(Math.log10(Math.max(a, b))))
+    const big = Math.pow(10, p - Math.floor(Math.log10(Math.max(a, b))))
     a = Math.round(Math.abs(a) * big)
     b = Math.round(Math.abs(b) * big)
 

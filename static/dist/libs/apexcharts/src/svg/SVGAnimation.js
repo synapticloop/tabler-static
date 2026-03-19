@@ -1,11 +1,19 @@
+// @ts-check
 import { morphPaths } from './PathMorphing'
+import { BrowserAPIs } from '../ssr/BrowserAPIs.js'
 
 // Sine ease in-out (matches SVG.js default '<>' easing)
+/**
+ * @param {number} t
+ */
 function easeInOut(t) {
   return -Math.cos(t * Math.PI) / 2 + 0.5
 }
 
 // Parse color string to [r, g, b, a]
+/**
+ * @param {string} str
+ */
 function parseColor(str) {
   if (!str || typeof str !== 'string') return null
   // hex #rgb or #rrggbb
@@ -18,17 +26,27 @@ function parseColor(str) {
   }
   // rgb(r,g,b) or rgba(r,g,b,a)
   const m = str.match(
-    /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/
+    /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/,
   )
   if (m) return [+m[1], +m[2], +m[3], m[4] !== undefined ? +m[4] : 1]
   return null
 }
 
+/**
+ * @param {number[]} from
+ * @param {number[]} to
+ * @param {number} pos
+ */
 function interpolateColor(from, to, pos) {
   return `rgba(${Math.round(from[0] + (to[0] - from[0]) * pos)},${Math.round(from[1] + (to[1] - from[1]) * pos)},${Math.round(from[2] + (to[2] - from[2]) * pos)},${from[3] + (to[3] - from[3]) * pos})`
 }
 
 class SVGAnimationRunner {
+  /**
+   * @param {any} element
+   * @param {number} duration
+   * @param {number} delay
+   */
   constructor(element, duration, delay) {
     this.el = element
     this.duration = duration ?? 300
@@ -38,34 +56,51 @@ class SVGAnimationRunner {
     this._afterCb = null
     this._duringCb = null
     this._next = null
+    /** @type {SVGAnimationRunner | null} */
     this._root = null
     this._scheduled = false
   }
 
+  /**
+   * @param {Record<string, any>} to
+   */
   attr(to) {
     this._attrTarget = to
     this._schedule()
     return this
   }
 
+  /**
+   * @param {string} d
+   */
   plot(d) {
     this._plotTarget = d
     this._schedule()
     return this
   }
 
+  /**
+   * @param {Function} fn
+   */
   after(fn) {
     this._afterCb = fn
     this._schedule()
     return this
   }
 
+  /**
+   * @param {Function} fn
+   */
   during(fn) {
     this._duringCb = fn
     this._schedule()
     return this
   }
 
+  /**
+   * @param {number} duration
+   * @param {number} delay
+   */
   animate(duration, delay) {
     const next = new SVGAnimationRunner(this.el, duration, delay)
     this._next = next
@@ -83,7 +118,7 @@ class SVGAnimationRunner {
 
   _executeChain() {
     const chain = []
-    let r = this
+    /** @type {any} */ let r = this
     while (r) {
       chain.push(r)
       r = r._next
@@ -97,6 +132,9 @@ class SVGAnimationRunner {
     })
   }
 
+  /**
+   * @param {number} startDelay
+   */
   _execute(startDelay) {
     const el = this.el
     const duration = this.duration
@@ -118,9 +156,9 @@ class SVGAnimationRunner {
 
     const run = () => {
       // Capture "from" values for attr interpolation
-      const fromAttrs = {}
-      const fromColors = {}
-      const toColors = {}
+      const fromAttrs = /** @type {Record<string, any>} */ ({})
+      const fromColors = /** @type {Record<string, any>} */ ({})
+      const toColors = /** @type {Record<string, any>} */ ({})
       if (this._attrTarget) {
         for (const key of Object.keys(this._attrTarget)) {
           const fromVal = el.attr(key)
@@ -136,6 +174,7 @@ class SVGAnimationRunner {
       }
 
       // Initialize path morpher if needed
+      /** @type {Function | null} */
       let morphFn = null
       if (this._plotTarget) {
         const fromPath = el.attr('d') || ''
@@ -149,6 +188,9 @@ class SVGAnimationRunner {
 
       const start = performance.now()
 
+      /**
+       * @param {number} now
+       */
       const tick = (now) => {
         const elapsed = now - start
         const rawPos = Math.min(elapsed / duration, 1)
@@ -159,13 +201,13 @@ class SVGAnimationRunner {
           if (rawPos >= 1) {
             el.attr(this._attrTarget)
           } else {
-            const current = {}
+            const current = /** @type {Record<string, any>} */ ({})
             for (const key of Object.keys(this._attrTarget)) {
               if (fromColors[key] && toColors[key]) {
                 current[key] = interpolateColor(
                   fromColors[key],
                   toColors[key],
-                  pos
+                  pos,
                 )
               } else {
                 const from = parseFloat(fromAttrs[key])
@@ -181,14 +223,14 @@ class SVGAnimationRunner {
 
         // Path morphing
         if (morphFn && rawPos < 1) {
-          el.attr('d', morphFn(pos))
+          el.attr('d', /** @type {any} */ (morphFn)(pos))
         }
 
         // During callback (pass raw linear position, matching SVG.js behavior)
         if (this._duringCb) this._duringCb(pos)
 
         if (rawPos < 1) {
-          requestAnimationFrame(tick)
+          BrowserAPIs.requestAnimationFrame(tick)
         } else {
           // Set final path
           if (this._plotTarget) {
@@ -198,7 +240,7 @@ class SVGAnimationRunner {
         }
       }
 
-      requestAnimationFrame(tick)
+      BrowserAPIs.requestAnimationFrame(tick)
     }
 
     if (startDelay > 0) {
@@ -210,7 +252,14 @@ class SVGAnimationRunner {
 }
 
 // Install .animate() on SVGElement prototype
+/**
+ * @param {any} ElementClass
+ */
 function installAnimationMethods(ElementClass) {
+  /**
+   * @param {number} duration
+   * @param {number} delay
+   */
   ElementClass.prototype.animate = function (duration, delay) {
     return new SVGAnimationRunner(this, duration, delay)
   }

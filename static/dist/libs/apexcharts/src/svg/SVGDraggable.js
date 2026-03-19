@@ -1,5 +1,14 @@
+// @ts-check
+import { Environment } from '../utils/Environment.js'
+
 // Install draggable behavior on SVGElement prototype
+/**
+ * @param {any} ElementClass
+ */
 function installDraggable(ElementClass) {
+  /**
+   * @param {any} opts
+   */
   ElementClass.prototype.draggable = function (opts) {
     if (opts === false) {
       // Disable dragging
@@ -13,6 +22,9 @@ function installDraggable(ElementClass) {
     const el = this
     const constraints = opts || {}
 
+    /**
+     * @param {any} e
+     */
     const onPointerDown = (e) => {
       // Ignore right-click
       if (e.button && e.button !== 0) return
@@ -31,11 +43,15 @@ function installDraggable(ElementClass) {
 
       // We need to convert client px to SVG coordinate space
       const svgRoot = svgEl.ownerSVGElement
+      /** @type {any} */
       let ctm = null
       if (svgRoot) {
         ctm = svgRoot.getScreenCTM()
       }
 
+      /**
+       * @param {any} me
+       */
       const onMove = (me) => {
         const mev = me.type === 'touchmove' ? me.touches[0] : me
 
@@ -77,6 +93,10 @@ function installDraggable(ElementClass) {
         const event = new CustomEvent('dragmove', {
           detail: {
             handler: {
+              /**
+               * @param {number} x
+               * @param {number} y
+               */
               move: function (x, y) {
                 svgEl.setAttribute('x', x)
                 svgEl.setAttribute('y', y)
@@ -89,16 +109,20 @@ function installDraggable(ElementClass) {
       }
 
       const onUp = () => {
-        document.removeEventListener('mousemove', onMove)
-        document.removeEventListener('touchmove', onMove)
-        document.removeEventListener('mouseup', onUp)
-        document.removeEventListener('touchend', onUp)
+        if (Environment.isBrowser()) {
+          document.removeEventListener('mousemove', onMove)
+          document.removeEventListener('touchmove', onMove)
+          document.removeEventListener('mouseup', onUp)
+          document.removeEventListener('touchend', onUp)
+        }
       }
 
-      document.addEventListener('mousemove', onMove)
-      document.addEventListener('touchmove', onMove)
-      document.addEventListener('mouseup', onUp)
-      document.addEventListener('touchend', onUp)
+      if (Environment.isBrowser()) {
+        document.addEventListener('mousemove', onMove)
+        document.addEventListener('touchmove', onMove)
+        document.addEventListener('mouseup', onUp)
+        document.addEventListener('touchend', onUp)
+      }
     }
 
     el.node.addEventListener('mousedown', onPointerDown)

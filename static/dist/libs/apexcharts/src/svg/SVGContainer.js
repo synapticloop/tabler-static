@@ -1,9 +1,17 @@
+// @ts-check
 import SVGElement from './SVGElement'
 import { SVGNS } from './math'
 import { SVGGradient } from './SVGGradient'
 import { SVGPattern } from './SVGPattern'
+import { BrowserAPIs } from '../ssr/BrowserAPIs.js'
 
 export default class SVGContainer extends SVGElement {
+  /**
+   * @param {number} x1
+   * @param {number} y1
+   * @param {number} x2
+   * @param {number} y2
+   */
   line(x1, y1, x2, y2) {
     const el = this._make('line')
     if (x1 !== undefined) {
@@ -12,6 +20,10 @@ export default class SVGContainer extends SVGElement {
     return el
   }
 
+  /**
+   * @param {import('../types/internal').ChartStateW} w
+   * @param {number} h
+   */
   rect(w, h) {
     const el = this._make('rect')
     if (w !== undefined) {
@@ -20,6 +32,9 @@ export default class SVGContainer extends SVGElement {
     return el
   }
 
+  /**
+   * @param {number} d
+   */
   circle(d) {
     const el = this._make('circle')
     if (d !== undefined) {
@@ -28,12 +43,18 @@ export default class SVGContainer extends SVGElement {
     return el
   }
 
+  /**
+   * @param {string} d
+   */
   path(d) {
     const el = this._make('path')
     if (d) el.attr('d', d)
     return el
   }
 
+  /**
+   * @param {string} pts
+   */
   polygon(pts) {
     const el = this._make('polygon')
     if (pts) el.attr('points', pts)
@@ -48,16 +69,22 @@ export default class SVGContainer extends SVGElement {
     return this._makeContainer('defs')
   }
 
+  /**
+   * @param {string} textContent
+   */
   plain(textContent) {
-    const node = document.createElementNS(SVGNS, 'text')
+    const node = BrowserAPIs.createElementNS(SVGNS, 'text')
     node.textContent = textContent
     const el = new SVGElement(node)
     this.node.appendChild(node)
     return el
   }
 
+  /**
+   * @param {object} builder
+   */
   text(builder) {
-    const node = document.createElementNS(SVGNS, 'text')
+    const node = BrowserAPIs.createElementNS(SVGNS, 'text')
     const el = new SVGElement(node)
     this.node.appendChild(node)
     if (typeof builder === 'function') {
@@ -66,8 +93,12 @@ export default class SVGContainer extends SVGElement {
     return el
   }
 
+  /**
+   * @param {string} url
+   * @param {Function} callback
+   */
   image(url, callback) {
-    const node = document.createElementNS(SVGNS, 'image')
+    const node = BrowserAPIs.createElementNS(SVGNS, 'image')
     node.setAttributeNS('http://www.w3.org/1999/xlink', 'href', url)
     const el = new SVGElement(node)
     this.node.appendChild(node)
@@ -84,34 +115,55 @@ export default class SVGContainer extends SVGElement {
     return el
   }
 
+  /**
+   * @param {string} type
+   * @param {object} builder
+   */
   gradient(type, builder) {
     return new SVGGradient(this, type, builder)
   }
 
+  /**
+   * @param {number} w
+   * @param {number} h
+   * @param {Function} builder
+   */
   pattern(w, h, builder) {
     return new SVGPattern(this, w, h, builder)
   }
 
+  /**
+   * @param {string} tag
+   */
   _make(tag) {
-    const node = document.createElementNS(SVGNS, tag)
+    const node = BrowserAPIs.createElementNS(SVGNS, tag)
     this.node.appendChild(node)
     return new SVGElement(node)
   }
 
+  /**
+   * @param {string} tag
+   */
   _makeContainer(tag) {
-    const node = document.createElementNS(SVGNS, tag)
+    const node = BrowserAPIs.createElementNS(SVGNS, tag)
     this.node.appendChild(node)
     return new SVGContainer(node)
   }
 }
 
 class TspanBuilder {
+  /**
+   * @param {any} textNode
+   */
   constructor(textNode) {
     this.textNode = textNode
   }
 
+  /**
+   * @param {string} text
+   */
   tspan(text) {
-    const tspan = document.createElementNS(SVGNS, 'tspan')
+    const tspan = BrowserAPIs.createElementNS(SVGNS, 'tspan')
     tspan.textContent = text
     this.textNode.appendChild(tspan)
     return new TspanWrapper(tspan, this.textNode)
@@ -119,6 +171,10 @@ class TspanBuilder {
 }
 
 class TspanWrapper {
+  /**
+   * @param {any} node
+   * @param {any} textNode
+   */
   constructor(node, textNode) {
     this.node = node
     this.textNode = textNode
